@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-app-version="2">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071113">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ديون سما اللباب">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>تحصيل ديون سما اللباب</title>
+<style>
+*{box-sizing:border-box} html{scroll-behavior:auto} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#071113;color:#fff;min-height:100vh}
+.wrap{max-width:780px;margin:auto;padding:18px} h1{margin:0 0 8px;color:#42E6E1;font-size:24px} .sub{color:#b8c6c8;margin-bottom:8px;line-height:1.55}
+.update{color:#75dcd8;font-size:13px;margin-bottom:12px}
+.statusbar{position:sticky;top:0;z-index:20;margin:0 -18px 12px;padding:10px 18px;background:rgba(7,17,19,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid #17383a;display:flex;gap:8px;flex-wrap:wrap}
+.pill{background:#10282a;border:1px solid #21494b;border-radius:999px;padding:7px 11px;font-size:14px} .donepill{color:#6ff0b4} .leftpill{color:#ffe5a3} .shownpill{color:#9ddcff}
+.search{width:100%;padding:14px;border-radius:12px;border:1px solid #21494b;background:#0d1c1e;color:#fff;font-size:17px;margin:0 0 10px;outline:none} .search:focus{border-color:#42E6E1;box-shadow:0 0 0 2px rgba(66,230,225,.13)}
+.card{background:#0d1c1e;border:1px solid #17383a;border-radius:15px;padding:14px;margin-bottom:12px;transition:.18s ease} .card.sent{opacity:.48;border-color:#2b725b}
+.topline{display:flex;gap:10px;align-items:center;font-size:18px} .num{min-width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:#123f42;color:#42E6E1;font-size:13px}
+.amount{margin-top:8px;color:#42E6E1;font-size:21px;font-weight:700} .usd{margin-top:2px;color:#f2f6f6;font-size:16px;font-weight:700;direction:ltr;text-align:right} .phone{color:#9fb2b4;margin-top:3px;direction:ltr;text-align:right}
+.actions{display:flex;gap:10px;margin-top:12px} .wa,.done{flex:1;text-align:center;padding:12px 10px;border-radius:10px;font-size:16px;text-decoration:none;border:0;cursor:pointer} .wa{background:#25D366;color:#06120a;font-weight:700} .done{background:#183335;color:#fff} .card.sent .done{background:#1f6f50} .card.sent .done:before{content:'✓ ';font-weight:800}
+.counter{color:#d5e2e3;margin:8px 0 16px} .noresults{display:none;color:#9fb2b4;text-align:center;padding:28px 10px}
+.toolbar{display:flex;gap:8px;margin-bottom:12px} .toolbtn{background:#10282a;color:#d9e7e8;border:1px solid #21494b;border-radius:10px;padding:9px 11px;font-size:13px}
+.lock{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px} .lockbox{width:min(440px,100%);background:#0d1c1e;border:1px solid #21494b;border-radius:18px;padding:22px} .lockbox h2{color:#42E6E1;margin:0 0 8px} .lockbox p{color:#b8c6c8;line-height:1.6} .pass{width:100%;padding:14px;border-radius:12px;border:1px solid #21494b;background:#071113;color:#fff;font-size:18px;direction:ltr;text-align:left} .unlock{width:100%;margin-top:10px;padding:13px;border:0;border-radius:12px;background:#42E6E1;color:#061516;font-weight:800;font-size:16px} .remember{display:flex;align-items:center;gap:8px;color:#b8c6c8;margin-top:12px;font-size:14px} .err{color:#ff9e9e;min-height:22px;margin-top:8px} .hidden{display:none!important}
+.loading{color:#9fb2b4;text-align:center;padding:24px}
+</style>
+</head>
+<body>
+<div id="lockScreen" class="lock">
+ <div class="lockbox">
+  <h2>ديون سما اللباب</h2>
+  <p>الصفحة محمية لأن بيها أسماء وأرقام وأرصدة. أدخل رمز الدخول.</p>
+  <input id="pass" class="pass" type="password" autocomplete="current-password" placeholder="رمز الدخول">
+  <button id="unlockBtn" class="unlock">فتح الصفحة</button>
+  <label class="remember"><input id="remember" type="checkbox" checked> تذكرني على هذا الآيفون</label>
+  <div id="err" class="err"></div>
+ </div>
+</div>
+<div id="app" class="wrap hidden">
+ <h1>تحصيل ديون سما اللباب</h1>
+ <div class="sub">اضغط «فتح واتساب» للإرسال، وبعدها «تم الإرسال». الحالة تنحفظ على نفس الجهاز.</div>
+ <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
+ <div class="statusbar">
+  <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
+  <span class="pill leftpill" id="leftCount">الباقي: 0</span>
+  <span class="pill shownpill" id="shownCount">المعروض: 0</span>
+ </div>
+ <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
+ <div class="toolbar"><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div id="counter" class="counter"></div>
+ <div id="cards"><div class="loading">جاري تحميل البيانات…</div></div>
+ <div id="noresults" class="noresults">ماكو اسم مطابق للبحث.</div>
+</div>
+<script>
+const AAD=new TextEncoder().encode('sama-allubab-debts-v2-gzip');
+const REMEMBER_KEY='sama_allubab_debt_unlock_web_v1';
+const QUERY_KEY='sama_allubab_debt_query_web_v2';
+let records=[], dataset=null, SENT_KEY='', POS_KEY='';
+function b64bytes(s){const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0));}
+async function fetchDataset(){
+ const r=await fetch('data.json?v='+Date.now(),{cache:'no-store'});
+ if(!r.ok)throw new Error('data load failed');
+ dataset=await r.json();
+ SENT_KEY='sama_allubab_debt_sent_'+dataset.version;
+ POS_KEY='sama_allubab_debt_scroll_'+dataset.version;
+ document.getElementById('updated').textContent='آخر تحديث: '+dataset.updated_at+' — '+dataset.count+' حساب';
+}
+async function derive(pass,p){
+ const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64bytes(p.salt),iterations:p.iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+}
+async function gunzip(bytes){const ds=new DecompressionStream('gzip');const stream=new Blob([bytes]).stream().pipeThrough(ds);return new Uint8Array(await new Response(stream).arrayBuffer());}
+async function decrypt(pass){
+ if(!dataset)await fetchDataset();
+ const p=dataset.payload,key=await derive(pass,p);
+ const compressed=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bytes(p.nonce),additionalData:AAD},key,b64bytes(p.cipher));
+ const plain=await gunzip(compressed);
+ return JSON.parse(new TextDecoder().decode(plain));
+}
+function normalizeArabic(s){s=(s||'').toLowerCase();try{s=s.normalize('NFKD')}catch(e){}return s.replace(/[ً-ٰٟ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/[^0-9a-z؀-ۿ]+/gi,' ').replace(/s+/g,' ').trim();}
+function getState(){try{return JSON.parse(localStorage.getItem(SENT_KEY)||'{}')}catch(e){return {}}}
+function saveState(st){localStorage.setItem(SENT_KEY,JSON.stringify(st));updateCounts();}
+function waUrl(r){return 'https://wa.me/'+encodeURIComponent(r.wa_phone)+'?text='+encodeURIComponent(r.message);}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function render(){
+ const state=getState(),box=document.getElementById('cards');
+ box.innerHTML=records.map((r,i)=>'<div class="card '+(state[r.id]?'sent':'')+'" data-id="'+esc(r.id)+'" data-search="'+esc(r.name+' '+r.phone)+'"><div class="topline"><span class="num">'+(i+1)+'</span><strong>'+esc(r.name)+'</strong></div><div class="amount">'+esc(r.amount)+'</div>'+(r.usd?'<div class="usd">'+esc(r.usd)+'</div>':'')+'<div class="phone">'+esc(r.phone)+'</div><div class="actions"><a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a><button class="done" type="button">'+(state[r.id]?'تم':'تم الإرسال')+'</button></div></div>').join('');
+ box.querySelectorAll('.card').forEach(c=>{c.querySelector('.done').addEventListener('click',()=>toggle(c));c.querySelector('.wa').addEventListener('click',remember);});
+ filterCards();
+}
+function toggle(card){const state=getState(),id=card.dataset.id;state[id]=!state[id];if(!state[id])delete state[id];card.classList.toggle('sent',!!state[id]);card.querySelector('.done').textContent=state[id]?'تم':'تم الإرسال';saveState(state);}
+function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
+function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[];document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=parts.every(p=>h.includes(p))?'':'none';});localStorage.setItem(QUERY_KEY,document.getElementById('q').value);updateCounts();}
+function remember(){if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));localStorage.setItem(QUERY_KEY,document.getElementById('q').value||'');}
+async function unlock(pass,rememberPass){
+ const err=document.getElementById('err');err.textContent='';
+ try{
+  records=await decrypt(pass);
+  if(rememberPass)localStorage.setItem(REMEMBER_KEY,pass);else localStorage.removeItem(REMEMBER_KEY);
+  document.getElementById('lockScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');
+  document.getElementById('q').value=localStorage.getItem(QUERY_KEY)||'';render();
+  const y=parseInt(localStorage.getItem(POS_KEY)||'0',10);if(y)setTimeout(()=>scrollTo(0,y),60);
+ }catch(e){err.textContent='رمز الدخول غير صحيح أو تعذر تحميل آخر تحديث.';}
+}
+document.getElementById('unlockBtn').addEventListener('click',()=>unlock(document.getElementById('pass').value,document.getElementById('remember').checked));
+document.getElementById('pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('unlockBtn').click();});
+document.getElementById('q').addEventListener('input',filterCards);
+document.getElementById('clearSearch').addEventListener('click',()=>{document.getElementById('q').value='';filterCards();document.getElementById('q').focus();});
+document.getElementById('lockBtn').addEventListener('click',()=>{localStorage.removeItem(REMEMBER_KEY);location.reload();});
+addEventListener('scroll',()=>{if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));},{passive:true});
+addEventListener('pagehide',remember);
+(async()=>{try{await fetchDataset();const remembered=localStorage.getItem(REMEMBER_KEY);if(remembered)unlock(remembered,true);}catch(e){document.getElementById('err').textContent='تعذر تحميل آخر تحديث. تأكد من الإنترنت.';}})();
+</script>
+</body></html>
