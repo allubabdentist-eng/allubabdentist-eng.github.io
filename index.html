@@ -58,12 +58,16 @@
 const AAD=new TextEncoder().encode('sama-allubab-debts-v2-gzip');
 const REMEMBER_KEY='sama_allubab_debt_unlock_web_v1';
 const QUERY_KEY='sama_allubab_debt_query_web_v2';
-let records=[], dataset=null, SENT_KEY='', POS_KEY='';
+let records=[], dataset=null, authDataset=null, SENT_KEY='', POS_KEY='';
 function b64bytes(s){const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0));}
 async function fetchDataset(){
- const r=await fetch('data.json?v='+Date.now(),{cache:'no-store'});
- if(!r.ok)throw new Error('data load failed');
- dataset=await r.json();
+ const [ar,dr]=await Promise.all([
+  fetch('auth.json?v='+Date.now(),{cache:'no-store'}),
+  fetch('data-v3.json?v='+Date.now(),{cache:'no-store'})
+ ]);
+ if(!ar.ok||!dr.ok)throw new Error('data load failed');
+ authDataset=await ar.json();
+ dataset=await dr.json();
  SENT_KEY='sama_allubab_debt_sent_'+dataset.version;
  POS_KEY='sama_allubab_debt_scroll_'+dataset.version;
  document.getElementById('updated').textContent='آخر تحديث: '+dataset.updated_at+' — '+dataset.count+' حساب';
@@ -73,12 +77,29 @@ async function derive(pass,p){
  return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64bytes(p.salt),iterations:p.iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
 }
 async function gunzip(bytes){const ds=new DecompressionStream('gzip');const stream=new Blob([bytes]).stream().pipeThrough(ds);return new Uint8Array(await new Response(stream).arrayBuffer());}
-async function decrypt(pass){
- if(!dataset)await fetchDataset();
- const p=dataset.payload,key=await derive(pass,p);
+async function decryptAuth(pass){
+ if(!authDataset)await fetchDataset();
+ const p=authDataset.payload,key=await derive(pass,p);
  const compressed=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bytes(p.nonce),additionalData:AAD},key,b64bytes(p.cipher));
  const plain=await gunzip(compressed);
  return JSON.parse(new TextDecoder().decode(plain));
+}
+async function bridgeKey(authRecords){
+ const anchor=authRecords.find(r=>String(r.name||'').trim()==='شركة الضمان'&&String(r.phone||'').trim()==='07710234436');
+ if(!anchor)throw new Error('auth anchor missing');
+ const seed=String(anchor.name).trim()+'|'+String(anchor.phone).trim()+'|'+String(anchor.amount).trim();
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(seed));
+ return crypto.subtle.importKey('raw',digest,{name:'AES-GCM'},false,['decrypt']);
+}
+async function decryptNew(authRecords){
+ const p=dataset.payload,key=await bridgeKey(authRecords);
+ const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bytes(p.nonce),additionalData:new TextEncoder().encode('sama-allubab-debts-v3-bridge')},key,b64bytes(p.cipher));
+ return JSON.parse(new TextDecoder().decode(plain));
+}
+async function decrypt(pass){
+ if(!dataset||!authDataset)await fetchDataset();
+ const authRecords=await decryptAuth(pass);
+ return decryptNew(authRecords);
 }
 function normalizeArabic(s){s=(s||'').toLowerCase();try{s=s.normalize('NFKD')}catch(e){}return s.replace(/[ً-ٰٟ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/[^0-9a-z؀-ۿ]+/gi,' ').replace(/s+/g,' ').trim();}
 function getState(){try{return JSON.parse(localStorage.getItem(SENT_KEY)||'{}')}catch(e){return {}}}
