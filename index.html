@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="7">
+<html lang="ar" dir="rtl" data-app-version="8">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -41,16 +41,16 @@
 </div>
 <div id="app" class="wrap hidden">
  <h1>تحصيل ديون سما اللباب</h1>
- <div class="sub">تحديث 14 تشرين الأول: يشمل حسابات جكوار/جكور والمجهزين. افتح واتساب للحسابات ذات الأرقام الصحيحة، ثم اضغط «تم الإرسال».</div>
+ <div class="sub">تحديث 19 تشرين الأول: يشمل حسابات جكوار/جكور والمجهزين. افتح واتساب للحسابات ذات الأرقام الصحيحة، ثم اضغط «تم الإرسال».</div>
  <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
- <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الزبائن والمكاتب</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">239,537,070 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,290,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,916.27 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 15/10/2026 • الدينار والدولار منفصلين</div>
+ <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الزبائن والمكاتب</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">222,490,070 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,290,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,916.27 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 19/10/2026 • الدينار والدولار منفصلين</div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
   <span class="pill shownpill" id="shownCount">المعروض: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (73)</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (76)</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
  <div id="counter" class="counter"></div>
  <div id="cards"><div class="loading">جاري تحميل البيانات…</div></div>
  <div id="noresults" class="noresults">ماكو اسم مطابق للبحث.</div>
@@ -64,7 +64,7 @@ function b64bytes(s){const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0)
 async function fetchDataset(){
  const [ar,dr]=await Promise.all([
   fetch('auth.json?v='+Date.now(),{cache:'no-store'}),
-  fetch('data-v3.json?v='+Date.now(),{cache:'no-store'})
+  fetch('data-20261019.json?v='+Date.now(),{cache:'no-store'})
  ]);
  if(!ar.ok||!dr.ok)throw new Error('data load failed');
  authDataset=await ar.json();
@@ -72,6 +72,7 @@ async function fetchDataset(){
  SENT_KEY='sama_allubab_debt_sent_'+dataset.version;
  POS_KEY='sama_allubab_debt_scroll_'+dataset.version;
  document.getElementById('updated').textContent='آخر تحديث: '+dataset.updated_at+' — '+dataset.count+' حساب، منها '+(dataset.jaguar_count||0)+' جكوار';
+ document.getElementById('jagBtn').textContent='جكوار ('+(dataset.jaguar_count||0)+')';
 }
 async function derive(pass,p){
  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
@@ -88,7 +89,8 @@ async function decryptAuth(pass){
 async function bridgeKey(authRecords){
  const anchor=authRecords.find(r=>String(r.name||'').trim()==='شركة الضمان'&&String(r.phone||'').trim()==='07710234436');
  if(!anchor)throw new Error('auth anchor missing');
- const seed=String(anchor.name).trim()+'|'+String(anchor.phone).trim()+'|'+String(anchor.amount).trim();
+ const raw=String(anchor.amount).trim(), matched=raw.match(/-?[\d,]+(?:\.\d+)?/); const balance=matched?String(Math.round(Number(matched[0].replace(/,/g,'')))):raw;
+ const seed=String(anchor.name).trim()+'|'+String(anchor.phone).trim()+'|'+balance;
  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(seed));
  return crypto.subtle.importKey('raw',digest,{name:'AES-GCM'},false,['decrypt']);
 }
@@ -116,7 +118,7 @@ function hydrate(x){
  r.usd=u?(fmt(u)+' $ — '+typ(u)):'';
  const pp=String(r.phone||'').match(/(?:^|\D)(07[5-9]\d{8})(?=\D|$)/);
  r.wa_phone=pp?'964'+pp[1].slice(1):'';
- let msg=[(r.name.startsWith('د ')?r.name:'د. '+r.name)+' 🌷','للتذكير فقط، حسب كشف حساب سما اللباب بتاريخ 15/10/2026:'];
+ let msg=[(r.name.startsWith('د ')?r.name:'د. '+r.name)+' 🌷','للتذكير فقط، حسب كشف حساب سما اللباب بتاريخ 19/10/2026:'];
  if(i)msg.push('• رصيد '+typ(i)+' بالدينار: '+fmt(i)+' د.ع.');
  if(u)msg.push('• رصيد '+typ(u)+' بالدولار: '+fmt(u)+' $.');
  if(r.review)msg.push('يرجى مراجعة وتسوية كل رصيد حسب عملته، مع الأخذ بنظر الاعتبار الأرصدة الدائنة الموضحة أعلاه.');
