@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="13">
+<html lang="ar" dir="rtl" data-app-version="14">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -50,8 +50,9 @@
   <span class="pill shownpill" id="shownCount">المعروض: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
- <div id="counter" class="counter"></div>
+ <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <p id="sentRestoreStatus" aria-live="polite" style="font-size:13px;color:#ffe5a3;line-height:1.7;margin:0 0 12px"></p>
+<div id="counter" class="counter"></div>
  <div id="cards"><div class="loading">جاري تحميل البيانات…</div></div>
  <div id="noresults" class="noresults">ماكو اسم مطابق للبحث.</div>
 </div>
@@ -153,23 +154,97 @@ function restoreOldSent(force){
  try{
   const existing=readSentObject(SENT_STABLE_KEY);
   if(existing&&!force)return 0;
-  const stable=existing||{},keys=Object.keys(localStorage).filter(k=>k.startsWith('sama_allubab_debt_sent_')&&k!==SENT_STABLE_KEY);
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('sama_allubab_debt_sent_')&&k!==SENT_STABLE_KEY);
   let recovered=0;
-  for(const key of keys){
-   const old=readSentObject(key);
-   if(!old)continue;
-   for(const [oldId,value] of Object.entries(old)){
-    if(value!==true&&value!==1&&value!=='true')continue;
-    const r=matchOldSentKey(oldId);
-    if(!r)continue;
-    const id=stableSentId(r);
-    if(stable[id]!==true){stable[id]=true;recovered++;}
-   }
-  }
-  localStorage.setItem(SENT_STABLE_KEY,JSON.stringify(stable));
+  for(const key of keys){const x=mergeOldSentMap(readSentObject(key));recovered+=x.added;}
+  recovered+=restoreLegacyHtmlLocal().added;
+  if(localStorage.getItem(SENT_STABLE_KEY)===null)localStorage.setItem(SENT_STABLE_KEY,'{}');
   return recovered;
  }catch(e){return 0;}
 }
+
+const OLD_HTML_SENT_KEY='sama_allubab_debt_app_20261001_v1';
+function mergeOldSentMap(raw){
+ let sent=raw;
+ if(typeof sent==='string'){try{sent=JSON.parse(sent);}catch(e){return {added:0,recognized:0,unmatched:0};}}
+ if(!sent||typeof sent!=='object'||Array.isArray(sent))return {added:0,recognized:0,unmatched:0};
+ if(sent.sent&&typeof sent.sent==='object')sent=sent.sent;
+ const stable=readSentObject(SENT_STABLE_KEY)||{};
+ let added=0,recognized=0,unmatched=0;
+ for(const [oldId,flag] of Object.entries(sent)){
+  if(flag!==true&&flag!==1&&flag!=='true')continue;
+  const row=matchOldSentKey(oldId);
+  if(!row){unmatched++;continue;}
+  recognized++;
+  const id=stableSentId(row);
+  if(stable[id]!==true){stable[id]=true;added++;}
+ }
+ if(added)localStorage.setItem(SENT_STABLE_KEY,JSON.stringify(stable));
+ return {added,recognized,unmatched};
+}
+function restoreLegacyHtmlLocal(){
+ try{return mergeOldSentMap(localStorage.getItem(OLD_HTML_SENT_KEY));}catch(e){return {added:0,recognized:0,unmatched:0};}
+}
+function restoreLegacyHtmlDatabase(){
+ return new Promise(resolve=>{
+  const none={added:0,recognized:0,unmatched:0};
+  if(!('indexedDB' in window)){resolve(none);return;}
+  try{
+   const req=indexedDB.open('sama_allubab_debt_db');
+   req.onerror=()=>resolve(none);
+   req.onupgradeneeded=()=>{ /* no older saved database exists here */ };
+   req.onsuccess=()=>{
+    const db=req.result;
+    if(!db.objectStoreNames.contains('kv')){db.close();resolve(none);return;}
+    try{
+     const tr=db.transaction('kv','readonly');
+     const read=tr.objectStore('kv').get(OLD_HTML_SENT_KEY);
+     read.onsuccess=()=>{const result=mergeOldSentMap(read.result);db.close();resolve(result);};
+     read.onerror=()=>{db.close();resolve(none);};
+    }catch(e){db.close();resolve(none);}
+   };
+  }catch(e){resolve(none);}
+ });
+}
+function countSavedOldData(){
+ const v=localStorage.getItem(OLD_HTML_SENT_KEY);
+ const legacy=readSentObject(OLD_HTML_SENT_KEY);
+ const legacyN=legacy?.sent?Object.values(legacy.sent).filter(Boolean).length:0;
+ const keys=Object.keys(localStorage).filter(k=>k.startsWith('sama_allubab_debt_sent_')&&k!==SENT_STABLE_KEY);
+ let n=0;
+ for(const key of keys){const data=readSentObject(key);if(data)n+=Object.values(data).filter(x=>x===true||x===1||x==='true').length;}
+ return {keys:keys.length,marked:n,legacyMarked:legacyN,legacyFound:v!==null,active:Object.keys(getState()).length};
+}
+function showStatus(message){
+ const el=document.getElementById('sentRestoreStatus');
+ if(el)el.textContent=message;
+}
+function downloadSentBackup(){
+ try{
+  const blob=new Blob([JSON.stringify({kind:'sama-allubab-sent-state',version:'24-10-2026',sent:readSentObject(SENT_STABLE_KEY)||{}},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='sama-allubab-sent-backup.json';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},2000);
+  showStatus('تم إنشاء نسخة احتياطية لعلامات الإرسال. احتفظ بالملف في Files.');
+ }catch(e){showStatus('تعذّر حفظ النسخة الاحتياطية. افتح التطبيق في Safari وحاول مجدداً.');}
+}
+function importSentBackup(input){
+ const f=input.files?.[0];if(!f)return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const data=JSON.parse(String(reader.result));
+   if(!data||typeof data!=='object'||!data.sent||typeof data.sent!=='object')throw new Error('invalid');
+   const result=mergeOldSentMap(data.sent);
+   render();
+   showStatus(result.recognized?'استرجعنا '+result.recognized+' حساب معروف، منها '+result.added+' علامة جديدة.': 'ملف النسخة انفتح لكن ماكو حسابات تطابق الكشف الحالي.');
+  }catch(e){showStatus('هذا الملف مو نسخة صحيحة لعلامات الإرسال.');}
+  input.value='';
+ };
+ reader.readAsText(f);
+}
+
 function getState(){
  try{
   if(localStorage.getItem(SENT_STABLE_KEY)===null)restoreOldSent(false);
@@ -222,7 +297,19 @@ document.getElementById('unlockBtn').addEventListener('click',()=>unlock(documen
 document.getElementById('pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('unlockBtn').click();});
 document.getElementById('q').addEventListener('input',filterCards);
 document.getElementById('jagBtn').addEventListener('click',()=>{onlyJaguar=!onlyJaguar;document.getElementById('jagBtn').classList.toggle('active',onlyJaguar);filterCards();});
-document.getElementById('restoreSent').addEventListener('click',()=>{const recovered=restoreOldSent(true);render();alert(recovered?'تم استرجاع '+recovered+' علامة إرسال من نسخك القديمة.':'ما لقينا علامات إضافية محفوظة بهذا المتصفح.');});
+document.getElementById('restoreSent').addEventListener('click',async()=>{
+ showStatus('جاري فحص سجلات النسخ السابقة…');
+ const fromLocal=restoreOldSent(true), fromDB=await restoreLegacyHtmlDatabase();
+ render();
+ const data=countSavedOldData(),total=data.active;
+ if(fromLocal+fromDB.added>0)showStatus('رجعنا '+(fromLocal+fromDB.added)+' علامة إرسال. مجموع المؤشر حالياً '+total+'.');
+ else if(total>0)showStatus('المحفوظ حالياً '+total+' علامة. ماكو علامات إضافية بالنسخ الموجودة على هذا المتصفح.');
+ else if(data.marked+data.legacyMarked>0)showStatus('لقينا علامات قديمة، لكن أرقام حساباتها ما طابقت الكشف الحالي. تواصل ويانا حتى نفحصها.');
+ else showStatus('ما لقينا سجل إرسال محفوظ بهالنسخة من التطبيق. إذا كنت مأشر من ملف HTML أو من Safari بدل أيقونة الشاشة، فكل واحد ممكن يحتفظ بسجل مستقل. إذا عندك ملف نسخة احتياطية اضغط «استيراد علامات».');
+});
+document.getElementById('sentBackup').addEventListener('click',downloadSentBackup);
+document.getElementById('sentImport').addEventListener('click',()=>document.getElementById('sentImportFile').click());
+document.getElementById('sentImportFile').addEventListener('change',function(){importSentBackup(this);});
 document.getElementById('clearSearch').addEventListener('click',()=>{document.getElementById('q').value='';filterCards();document.getElementById('q').focus();});
 document.getElementById('lockBtn').addEventListener('click',()=>{localStorage.removeItem(REMEMBER_KEY);location.reload();});
 addEventListener('scroll',()=>{if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));},{passive:true});
