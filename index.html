@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="14">
+<html lang="ar" dir="rtl" data-app-version="15">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -13,9 +13,9 @@
 <title>تحصيل ديون سما اللباب</title>
 <style>
 *{box-sizing:border-box} html{scroll-behavior:auto} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#071113;color:#fff;min-height:100vh}
-.wrap{max-width:780px;margin:auto;padding:18px} h1{margin:0 0 8px;color:#42E6E1;font-size:24px} .sub{color:#b8c6c8;margin-bottom:8px;line-height:1.55}
+.wrap{max-width:780px;margin:auto;padding:18px;padding-top:max(18px,calc(env(safe-area-inset-top, 0px) + 18px))} h1{margin:0 0 8px;color:#42E6E1;font-size:24px} .sub{color:#b8c6c8;margin-bottom:8px;line-height:1.55}
 .update{color:#75dcd8;font-size:13px;margin-bottom:12px}
-.statusbar{position:sticky;top:0;z-index:20;margin:0 -18px 12px;padding:10px 18px;background:rgba(7,17,19,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid #17383a;display:flex;gap:8px;flex-wrap:wrap}
+.statusbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin:0 -18px 12px;padding:10px 18px;background:rgba(7,17,19,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid #17383a;display:flex;gap:8px;flex-wrap:wrap}
 .pill{background:#10282a;border:1px solid #21494b;border-radius:999px;padding:7px 11px;font-size:14px} .donepill{color:#6ff0b4} .leftpill{color:#ffe5a3} .shownpill{color:#9ddcff}
 .search{width:100%;padding:14px;border-radius:12px;border:1px solid #21494b;background:#0d1c1e;color:#fff;font-size:17px;margin:0 0 10px;outline:none} .search:focus{border-color:#42E6E1;box-shadow:0 0 0 2px rgba(66,230,225,.13)}
 .card{background:#0d1c1e;border:1px solid #17383a;border-radius:15px;padding:14px;margin-bottom:12px;transition:.18s ease} .card.sent{opacity:.48;border-color:#2b725b}
@@ -50,7 +50,7 @@
   <span class="pill shownpill" id="shownCount">المعروض: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
  <p id="sentRestoreStatus" aria-live="polite" style="font-size:13px;color:#ffe5a3;line-height:1.7;margin:0 0 12px"></p>
 <div id="counter" class="counter"></div>
  <div id="cards"><div class="loading">جاري تحميل البيانات…</div></div>
@@ -60,7 +60,8 @@
 const AAD=new TextEncoder().encode('sama-allubab-debts-v2-gzip');
 const REMEMBER_KEY='sama_allubab_debt_unlock_web_v1';
 const QUERY_KEY='sama_allubab_debt_query_web_v2';
-let records=[], dataset=null, authDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false;
+let records=[], dataset=null, authDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false, onlyUnsent=false;
+const SENT_RESET_BACKUP_KEY='sama_allubab_debt_sent_pre_reset_backup_v1';
 function b64bytes(s){const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0));}
 async function fetchDataset(){
  const [ar,dr]=await Promise.all([
@@ -279,9 +280,9 @@ async function copyMessage(btn){
  try{await navigator.clipboard.writeText(r.message);}catch(e){const ta=document.createElement('textarea');ta.value=r.message;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
  btn.textContent='تم نسخ المسج';
 }
-function toggle(card){const state=getState(),id=card.dataset.id;state[id]=!state[id];if(!state[id])delete state[id];card.classList.toggle('sent',!!state[id]);card.querySelector('.done').textContent=state[id]?'تم':'تم الإرسال';saveState(state);}
+function toggle(card){const state=getState(),id=card.dataset.id;state[id]=!state[id];if(!state[id])delete state[id];card.classList.toggle('sent',!!state[id]);card.querySelector('.done').textContent=state[id]?'تم':'تم الإرسال';saveState(state);if(onlyUnsent)filterCards();}
 function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
-function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[];document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=(!onlyJaguar||c.dataset.jaguar==='1')&&parts.every(p=>h.includes(p))?'':'none';});localStorage.setItem(QUERY_KEY,document.getElementById('q').value);updateCounts();}
+function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[],state=getState();document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=(!onlyJaguar||c.dataset.jaguar==='1')&&(!onlyUnsent||!state[c.dataset.id])&&parts.every(p=>h.includes(p))?'':'none';});try{localStorage.setItem(QUERY_KEY,document.getElementById('q').value);}catch(e){}updateCounts();}
 function remember(){if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));localStorage.setItem(QUERY_KEY,document.getElementById('q').value||'');}
 async function unlock(pass,rememberPass){
  const err=document.getElementById('err');err.textContent='';
@@ -298,6 +299,7 @@ document.getElementById('pass').addEventListener('keydown',e=>{if(e.key==='Enter
 document.getElementById('q').addEventListener('input',filterCards);
 document.getElementById('jagBtn').addEventListener('click',()=>{onlyJaguar=!onlyJaguar;document.getElementById('jagBtn').classList.toggle('active',onlyJaguar);filterCards();});
 document.getElementById('restoreSent').addEventListener('click',async()=>{
+ if(!confirm('علامات النسخ القديمة ممكن تكون غير دقيقة. متأكد تريد استرجاعها وإضافتها للحالات الحالية؟'))return;
  showStatus('جاري فحص سجلات النسخ السابقة…');
  const fromLocal=restoreOldSent(true), fromDB=await restoreLegacyHtmlDatabase();
  render();
@@ -306,6 +308,37 @@ document.getElementById('restoreSent').addEventListener('click',async()=>{
  else if(total>0)showStatus('المحفوظ حالياً '+total+' علامة. ماكو علامات إضافية بالنسخ الموجودة على هذا المتصفح.');
  else if(data.marked+data.legacyMarked>0)showStatus('لقينا علامات قديمة، لكن أرقام حساباتها ما طابقت الكشف الحالي. تواصل ويانا حتى نفحصها.');
  else showStatus('ما لقينا سجل إرسال محفوظ بهالنسخة من التطبيق. إذا كنت مأشر من ملف HTML أو من Safari بدل أيقونة الشاشة، فكل واحد ممكن يحتفظ بسجل مستقل. إذا عندك ملف نسخة احتياطية اضغط «استيراد علامات».');
+});
+
+document.getElementById('unsentFilter').addEventListener('click',()=>{
+ onlyUnsent=!onlyUnsent;
+ const btn=document.getElementById('unsentFilter');
+ btn.classList.toggle('active',onlyUnsent);
+ btn.textContent=onlyUnsent?'عرض الجميع':'غير المرسل فقط';
+ filterCards();
+});
+document.getElementById('resetSent').addEventListener('click',()=>{
+ const current=readSentObject(SENT_STABLE_KEY)||{};
+ const total=records.filter(r=>current[stableSentId(r)]===true).length;
+ if(!total){showStatus('حالياً ماكو أي حساب مأشّر تم الإرسال.');return;}
+ if(!confirm('حالياً '+total+' حساب عليها تم الإرسال. هذا العدد مو تأكيد أن المسجات انرسلت فعلاً. تريد تصفير العلامات الخاطئة؟ نحفظ نسخة قابلة للاسترجاع قبل التصفير.'))return;
+ try{
+  localStorage.setItem(SENT_RESET_BACKUP_KEY,JSON.stringify(current));
+  localStorage.setItem(SENT_STABLE_KEY,'{}');
+  if(SENT_KEY)localStorage.setItem(SENT_KEY,'{}');
+  render();
+  showStatus('تصفّرت علامات الإرسال، والنسخة السابقة محفوظة على نفس الآيفون. تگدر ترجعها بزر «تراجع عن التصحيح». علّم «تم الإرسال» فقط للحسابات اللي متأكد راسلتها.');
+ }catch(e){showStatus('تعذّر حفظ نسخة احتياطية؛ لذلك ما صفّرنا أي علامة. افتح الصفحة في Safari وحاول مجدداً.');}
+});
+document.getElementById('undoReset').addEventListener('click',()=>{
+ const saved=readSentObject(SENT_RESET_BACKUP_KEY);
+ if(!saved){showStatus('ماكو تصحيح سابق محفوظ حتى نتراجع عنه.');return;}
+ if(!confirm('ترجع علامات الإرسال مثل ما كانت قبل آخر تصحيح؟'))return;
+ try{
+  localStorage.setItem(SENT_STABLE_KEY,JSON.stringify(saved));
+  render();
+  showStatus('رجعنا علامات الإرسال السابقة مثل ما كانت قبل التصحيح.');
+ }catch(e){showStatus('ما كدرنا نرجّع الحالات المحفوظة.');}
 });
 document.getElementById('sentBackup').addEventListener('click',downloadSentBackup);
 document.getElementById('sentImport').addEventListener('click',()=>document.getElementById('sentImportFile').click());
