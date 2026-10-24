@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="15">
+<html lang="ar" dir="rtl" data-app-version="16">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -41,9 +41,9 @@
 </div>
 <div id="app" class="wrap hidden">
  <h1>تحصيل ديون سما اللباب</h1>
- <div class="sub">تحديث 24 تشرين الأول: يشمل حسابات جكوار/جكور والمجهزين. افتح واتساب للحسابات ذات الأرقام الصحيحة، ثم اضغط «تم الإرسال».</div>
+ <div class="sub">تحديث 24 تشرين الأول: تشمل الأرصدة أربع تسديدات جديدة. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
  <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
- <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الزبائن والمكاتب</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">216,968,070 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 24/10/2026 • دفعة شركة الضمان محسوبة • الدينار والدولار منفصلين</div>
+ <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الزبائن والمكاتب</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">216,288,070 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 24/10/2026 بعد احتساب سندات قبض 680,000 د.ع • دفعة الضمان محسوبة • الدينار والدولار منفصلين</div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
@@ -60,17 +60,19 @@
 const AAD=new TextEncoder().encode('sama-allubab-debts-v2-gzip');
 const REMEMBER_KEY='sama_allubab_debt_unlock_web_v1';
 const QUERY_KEY='sama_allubab_debt_query_web_v2';
-let records=[], dataset=null, authDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false, onlyUnsent=false;
+let records=[], dataset=null, authDataset=null, receiptDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false, onlyUnsent=false;
 const SENT_RESET_BACKUP_KEY='sama_allubab_debt_sent_pre_reset_backup_v1';
 function b64bytes(s){const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0));}
 async function fetchDataset(){
- const [ar,dr]=await Promise.all([
+ const [ar,dr,rr]=await Promise.all([
   fetch('auth.json?v='+Date.now(),{cache:'no-store'}),
-  fetch('data-20261024.json?v='+Date.now(),{cache:'no-store'})
+  fetch('data-20261024.json?v='+Date.now(),{cache:'no-store'}),
+  fetch('receipts-20261024.json?v='+Date.now(),{cache:'no-store'})
  ]);
- if(!ar.ok||!dr.ok)throw new Error('data load failed');
+ if(!ar.ok||!dr.ok||!rr.ok)throw new Error('data or receipts load failed');
  authDataset=await ar.json();
  dataset=await dr.json();
+ receiptDataset=await rr.json();
  SENT_KEY='sama_allubab_debt_sent_'+dataset.version;
  POS_KEY='sama_allubab_debt_scroll_'+dataset.version;
  document.getElementById('updated').textContent='آخر تحديث: '+dataset.updated_at+' — '+dataset.count+' حساب، منها '+(dataset.jaguar_count||0)+' جكوار';
@@ -102,10 +104,35 @@ async function decryptNew(authRecords){
  const raw=dataset.mode==='bridge-v4-gzip' ? await gunzip(new Uint8Array(plain)) : plain;
  return JSON.parse(new TextDecoder().decode(raw));
 }
+async function reconcileReceipts(rows,authRecords){
+ const p=receiptDataset;
+ if(!p||p.mode!=='encrypted-aes-gcm')throw new Error('Missing encrypted receipt reconciliation');
+ const key=await bridgeKey(authRecords);
+ const data=await crypto.subtle.decrypt(
+  {name:'AES-GCM',iv:b64bytes(p.nonce),additionalData:new TextEncoder().encode('sama-allubab-debts-settlements-v1')},
+  key,b64bytes(p.cipher));
+ const ledger=JSON.parse(new TextDecoder().decode(data));
+ if(ledger.base_version!==dataset.version||ledger.total_iqd!==680000||ledger.items.length!==4)throw new Error('Receipt ledger differs from base statement');
+ const out=rows.map(r=>({...r}));
+ let removed=0;
+ for(const item of ledger.items){
+  const matches=out.filter(r=>String(r.category)===item.category&&String(r.account)===item.account);
+  if(matches.length!==1)throw new Error('Receipt account mismatch');
+  const row=matches[0];
+  if(Number(row.iqd||0)!==item.before_iqd||Number(row.usd||0)!==0||item.before_iqd-item.payment_iqd!==item.after_iqd)throw new Error('Receipt balance mismatch');
+  row.iqd=item.after_iqd;
+  if(row.iqd===0){out.splice(out.indexOf(row),1);removed++;}
+ }
+ if(removed!==3||out.length!==205)throw new Error('Unexpected number of settled accounts');
+ dataset.count=out.length;
+ document.getElementById('updated').textContent='آخر تحديث: 24-10-2026 — بعد 4 سندات قبض — '+out.length+' حساب، منها '+(dataset.jaguar_count||0)+' جكوار';
+ return out;
+}
 async function decrypt(pass){
- if(!dataset||!authDataset)await fetchDataset();
+ if(!dataset||!authDataset||!receiptDataset)await fetchDataset();
  const authRecords=await decryptAuth(pass);
- return decryptNew(authRecords);
+ const rows=await decryptNew(authRecords);
+ return reconcileReceipts(rows,authRecords);
 }
 
 function hydrate(x){
