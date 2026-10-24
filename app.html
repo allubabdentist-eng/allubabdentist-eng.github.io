@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="7">
+<html lang="ar" dir="rtl" data-app-version="8">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -50,7 +50,7 @@
   <span class="pill shownpill" id="shownCount">المعروض: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (73)</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (73)</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
  <div id="counter" class="counter"></div>
  <div id="cards"><div class="loading">جاري تحميل البيانات…</div></div>
  <div id="noresults" class="noresults">ماكو اسم مطابق للبحث.</div>
@@ -127,8 +127,64 @@ function hydrate(x){
  return r;
 }
 function normalizeArabic(s){s=(s||'').toLowerCase();try{s=s.normalize('NFKD')}catch(e){}return s.replace(/[ً-ٰٟ]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ة/g,'ه').replace(/[^0-9a-z؀-ۿ]+/gi,' ').replace(/\s+/g,' ').trim();}
-function getState(){try{return JSON.parse(localStorage.getItem(SENT_KEY)||'{}')}catch(e){return {}}}
-function saveState(st){localStorage.setItem(SENT_KEY,JSON.stringify(st));updateCounts();}
+const SENT_STABLE_KEY='sama_allubab_debt_sent_stable_v2';
+function stableSentId(r){
+ const category=String(r.category||'customer').trim(),account=String(r.account||'').trim();
+ return account?'account|'+category+'|'+account:'name|'+category+'|'+normalizeArabic(r.name||r.id);
+}
+function readSentObject(key){
+ try{const x=JSON.parse(localStorage.getItem(key)||'null');return x&&typeof x==='object'&&!Array.isArray(x)?x:null;}catch(e){return null;}
+}
+function matchOldSentKey(oldId){
+ const key=String(oldId||''),direct=records.find(r=>String(r.id)===key);
+ if(direct)return direct;
+ const parts=key.split('|').map(s=>String(s).trim());
+ const category=parts.includes('supplier')?'supplier':parts.includes('customer')?'customer':null;
+ const eligible=category?records.filter(r=>r.category===category):records;
+ const byAccount=eligible.filter(r=>String(r.account||'').trim()!==''&&parts.includes(String(r.account).trim()));
+ if(byAccount.length===1)return byAccount[0];
+ const normalized=parts.map(normalizeArabic).filter(s=>s.length>=3);
+ const byName=eligible.filter(r=>normalized.includes(normalizeArabic(r.name||'')));
+ return byName.length===1?byName[0]:null;
+}
+function restoreOldSent(force){
+ try{
+  const existing=readSentObject(SENT_STABLE_KEY);
+  if(existing&&!force)return 0;
+  const stable=existing||{},keys=Object.keys(localStorage).filter(k=>k.startsWith('sama_allubab_debt_sent_')&&k!==SENT_STABLE_KEY);
+  let recovered=0;
+  for(const key of keys){
+   const old=readSentObject(key);
+   if(!old)continue;
+   for(const [oldId,value] of Object.entries(old)){
+    if(value!==true&&value!==1&&value!=='true')continue;
+    const r=matchOldSentKey(oldId);
+    if(!r)continue;
+    const id=stableSentId(r);
+    if(stable[id]!==true){stable[id]=true;recovered++;}
+   }
+  }
+  localStorage.setItem(SENT_STABLE_KEY,JSON.stringify(stable));
+  return recovered;
+ }catch(e){return 0;}
+}
+function getState(){
+ try{
+  if(localStorage.getItem(SENT_STABLE_KEY)===null)restoreOldSent(false);
+  const stable=readSentObject(SENT_STABLE_KEY)||{},state={};
+  for(const r of records)if(stable[stableSentId(r)]===true)state[r.id]=true;
+  return state;
+ }catch(e){return {};}
+}
+function saveState(st){
+ try{
+  const stable=readSentObject(SENT_STABLE_KEY)||{};
+  for(const r of records)stable[stableSentId(r)]=!!st[r.id];
+  localStorage.setItem(SENT_STABLE_KEY,JSON.stringify(stable));
+  if(SENT_KEY)localStorage.setItem(SENT_KEY,JSON.stringify(st));
+ }catch(e){console.warn('Unable to save sent status',e);}
+ updateCounts();
+}
 function waUrl(r){return 'https://wa.me/'+encodeURIComponent(r.wa_phone)+'?text='+encodeURIComponent(r.message);}
 function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function render(){
@@ -164,6 +220,7 @@ document.getElementById('unlockBtn').addEventListener('click',()=>unlock(documen
 document.getElementById('pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('unlockBtn').click();});
 document.getElementById('q').addEventListener('input',filterCards);
 document.getElementById('jagBtn').addEventListener('click',()=>{onlyJaguar=!onlyJaguar;document.getElementById('jagBtn').classList.toggle('active',onlyJaguar);filterCards();});
+document.getElementById('restoreSent').addEventListener('click',()=>{const recovered=restoreOldSent(true);render();alert(recovered?'تم استرجاع '+recovered+' علامة إرسال من نسخك القديمة.':'ما لقينا علامات إضافية محفوظة بهذا المتصفح.');});
 document.getElementById('clearSearch').addEventListener('click',()=>{document.getElementById('q').value='';filterCards();document.getElementById('q').focus();});
 document.getElementById('lockBtn').addEventListener('click',()=>{localStorage.removeItem(REMEMBER_KEY);location.reload();});
 addEventListener('scroll',()=>{if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));},{passive:true});
