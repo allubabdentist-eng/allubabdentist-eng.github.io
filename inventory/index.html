@@ -11,11 +11,11 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 4</small></span></div>
+    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 5</small></span></div>
     <button id="btnHelp" class="header-btn" title="طريقة الاستخدام">؟</button>
   </header>
 
@@ -60,18 +60,19 @@
       </div>
       <div class="order-add-head"><h3>إضافة مواد للطلبية</h3><button id="addCustomItem" class="button secondary" type="button">+ مادة يدوية</button></div>
       <label class="search-wrap order-search"><span>⌕</span><input id="orderSearch" type="search" placeholder="ابحث عن مادة واضغط إضافة..." autocomplete="off" /></label>
+      <div id="orderStockInfo" class="stock-info">جارِ التأكد من تحميل كميات المخزن...</div>
       <div id="orderSuggestions" class="order-suggestions"></div>
       <div class="order-add-head"><h3>مواد الطلبية</h3><span class="muted" id="orderUnitCount">0 قطعة</span></div>
       <div id="orderItems" class="product-list"><div class="empty">الطلبية فارغة. ابحث عن مادة واضغط إضافة.</div></div>
       <div class="order-actions">
-        <button id="shareOrder" class="button whatsapp" type="button">نسخ الطلبية وفتح كروب تجهيز الطلبات</button>
+        <button id="shareOrder" class="button whatsapp" type="button">مشاركة الطلبية بالواتساب (اختار الكروب)</button>
         <button id="saveOrder" class="button primary" type="button">حفظ ضمن القوائم</button>
         <button id="copyOrder" class="button secondary" type="button">نسخ الطلبية</button>
         <button id="openFulfillmentGroup" class="button secondary" type="button">فتح كروب تجهيز الطلبات مباشرة</button>
         <button id="clearOrder" class="button ghost" type="button">طلبية جديدة</button>
       </div>
       <div class="saved-order-block"><div class="order-add-head"><h3>قوائم الطلبات المحفوظة</h3><span id="savedOrdersCount" class="pill">0 قائمة</span></div><div id="savedOrdersList" class="product-list"><div class="empty">ما عندك قوائم محفوظة بعد.</div></div></div>
-      <p class="disclaimer">الطلبية تنحفظ على هذا الجهاز ولا تنقص رصيد المخزن. زر كروب تجهيز الطلبات ينسخ نص الطلبية ويفتح رابط الكروب، وبعدها تلصقها هناك وتضغط إرسال بنفسك. الإرسال التلقائي للكروب غير مدعوم بواتساب.</p>
+      <p class="disclaimer">الطلبية تنحفظ على هذا الجهاز ولا تنقص رصيد المخزن. زر «مشاركة الطلبية بالواتساب» يفتح واتساب والطلبية مكتوبة جاهزة؛ اختار «تجهيز طلبات / اللباب» ثم اضغط إرسال. ما يصير إرسال تلقائي للكروب من رابط الدعوة. زر «فتح كروب تجهيز الطلبات مباشرة» يفتح الكروب فقط، وإذا استخدمته لازم تنسخ وتلصق الطلبية يدوياً.</p>
       <details class="order-preview"><summary>معاينة الرسالة قبل الإرسال</summary><pre id="orderMessagePreview"></pre></details>
     </section>
 
@@ -99,5 +100,5 @@
   <nav class="mobile-nav"><button class="active" data-tab="inventory">المخزون</button><button data-tab="orders">🛒 القوائم</button><button data-tab="changes">المقارنة</button><button data-tab="audit">الجرد</button><button data-tab="settings">الملفات</button></nav>
   <dialog id="auditDialog"><form id="auditForm" method="dialog" class="dialog-form"><div class="dialog-heading"><h3>مطابقة جرد يدوي</h3><button type="button" id="closeDialog" class="plain-x">×</button></div><p id="auditProductName"></p><p>رصيد البرنامج: <strong id="auditExpected"></strong></p><label>العدد الفعلي بالمخزن<input type="number" id="auditActual" step="any" required inputmode="decimal" /></label><label>ملاحظة (اختياري)<textarea id="auditNote" placeholder="مثلاً: بعد الجرد المسائي"></textarea></label><button class="button primary" type="submit">حفظ المطابقة</button></form></dialog>
   <dialog id="orderDialog"><form id="orderItemForm" class="dialog-form"><div class="dialog-heading"><h3 id="orderDialogTitle">إضافة مادة للطلبية</h3><button type="button" id="closeOrderDialog" class="plain-x">×</button></div><label>اسم المادة<input type="text" id="orderItemName" maxlength="250" required /></label><p class="muted" id="orderCurrentStock"></p><label>الكمية المطلوبة<input id="orderItemQty" type="number" min="0.001" step="any" inputmode="decimal" value="1" required /></label><label>ملاحظة للمادة (اختياري)<input id="orderItemNote" maxlength="220" type="text" placeholder="مثلاً: مقاس معين" /></label><button class="button primary" type="submit" id="saveOrderItem">إضافة للطلبية</button></form></dialog>
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </body></html>
