@@ -131,7 +131,7 @@ async function completeOrder(){
  }
  await saveOrderDraft();
  renderOrder();renderOrderSuggestions();updateFulfillmentPanel();
- alertBox('✅ تم تصفير الطلبية: الاسم والرقم والعنوان والملاحظات والمواد. هسة تگدر تبدأ طلبية جديدة. الطلبات المحفوظة والجرد ما تغيرت.');
+ const notice=$('orderResetNotice');if(notice)notice.hidden=false;
 }
 async function sendOrderToGroup(order=null){
   const items=order?.items||state.orderItems;
@@ -192,6 +192,7 @@ async function savedOrderAction(e){
   }
 }
 function renderOrder(){
+  const resetNotice=$('orderResetNotice');if(resetNotice&&hasCurrentOrderData())resetNotice.hidden=true;
   const items=state.orderItems;
   $('orderCount').textContent=fmtn(items.length)+' مادة';
   $('orderTabCount').textContent=fmtn(items.length);
