@@ -36,3 +36,9 @@
 .saved-order-item .saved-actions{display:flex;flex-wrap:wrap;gap:7px}.saved-order-item .saved-actions .smallbtn{font-size:12px;padding:8px 12px}
 .saved-order-item .saved-actions .send-saved{background:#168b61;color:#fff;border-color:#168b61}
 @media(max-width:720px){.hero-action{gap:11px}.orders-quick{min-height:47px}.mobile-nav button[data-tab="orders"]{color:#066b74;font-weight:900}.mobile-nav button[data-tab="orders"].active{background:#075d68;color:white}.saved-order-block{padding:13px 10px}}
+/* v5: show inventory balances prominently while composing an order. */
+.stock-info{background:#ecf5f6;border:1px solid #cbe1e4;border-radius:11px;color:#245b63;padding:11px 13px;font-size:12px;line-height:1.65;margin:7px 0 11px}
+.stock-info.missing{background:#fff3e4;border-color:#f3d2a4;color:#855014}
+.stock-balance{display:block;color:#137b65;font-size:12px;font-weight:800;margin-top:7px;direction:rtl}
+.stock-balance.low{color:#ae5141}
+.stock-balance.unavailable{color:#8b6a49;font-size:11px}
