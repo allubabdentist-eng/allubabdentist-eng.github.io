@@ -2,7 +2,7 @@
 /* Sama Allubab stock control — all company data stays on the device. */
 const $ = id => document.getElementById(id);
 const nf = new Intl.NumberFormat('en-US',{maximumFractionDigits:3});
-const state = {snapshots:[],audits:[],groups:[],groupMap:new Map(),deltaMap:new Map(),deltas:[],pageSize:80,shown:80,activeTab:'inventory',activeAuditName:null,low:10,orderItems:[],orderCustomer:'',orderCustomerPhone:'',orderCustomerAddress:'',orderGeneralNote:'',savedOrders:[],editingOrderId:null,orderSelectedKey:null};
+const state = {snapshots:[],audits:[],groups:[],groupMap:new Map(),deltaMap:new Map(),deltas:[],pageSize:80,shown:80,activeTab:'inventory',activeAuditName:null,low:10,orderItems:[],orderCustomer:'',orderCustomerPhone:'',orderCustomerAddress:'',orderGeneralNote:'',pendingFulfillment:false,savedOrders:[],editingOrderId:null,orderSelectedKey:null};
 const dbName = 'SamaAllubabPrivateInventoryV1';
 let dbPromise;
 function db(){
@@ -14,7 +14,7 @@ function db(){
   return dbPromise;
 }
 async function storageRead(){const d=await db();return new Promise((res,rej)=>{const q=d.transaction('data','readonly').objectStore('data').get('inventory');q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}
-async function storageWrite(){const d=await db();const data={snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderCustomerPhone:state.orderCustomerPhone,orderCustomerAddress:state.orderCustomerAddress,orderGeneralNote:state.orderGeneralNote,savedOrders:state.savedOrders};return new Promise((res,rej)=>{const tx=d.transaction('data','readwrite');tx.objectStore('data').put(data,'inventory');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function storageWrite(){const d=await db();const data={snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderCustomerPhone:state.orderCustomerPhone,orderCustomerAddress:state.orderCustomerAddress,orderGeneralNote:state.orderGeneralNote,pendingFulfillment:state.pendingFulfillment,savedOrders:state.savedOrders};return new Promise((res,rej)=>{const tx=d.transaction('data','readwrite');tx.objectStore('data').put(data,'inventory');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 function cleanName(v){return String(v||'').trim().replace(/\s+/g,' ')}
 function nameKey(v){return cleanName(v).toLocaleLowerCase()}
 function compactNameKey(v){return nameKey(v).normalize('NFKD').replace(/[\u064b-\u065f\u0670]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/[^a-z0-9\u0621-\u064a]/gi,'')}
@@ -109,6 +109,30 @@ async function copyWhatsAppText(message){
     return Boolean(ok);
   }catch(e){console.warn('Clipboard fallback unavailable',e);return false}
 }
+function hasCurrentOrderData(){
+ return state.orderItems.length>0||Boolean(state.orderCustomer.trim()||state.orderCustomerPhone.trim()||state.orderCustomerAddress.trim()||state.orderGeneralNote.trim());
+}
+function updateFulfillmentPanel(){
+ const panel=$('fulfillmentCheck');if(panel)panel.hidden=!state.pendingFulfillment||!hasCurrentOrderData();
+ const done=$('finishOrder');if(done)done.disabled=!hasCurrentOrderData();
+}
+async function markOrderHandoff(){
+ state.pendingFulfillment=true;
+ await saveOrderDraft();
+ updateFulfillmentPanel();
+}
+async function completeOrder(){
+ // A confirmed completion resets only the working draft, never the inventory or saved lists.
+ state.orderItems=[];
+ state.orderCustomer='';state.orderCustomerPhone='';state.orderCustomerAddress='';state.orderGeneralNote='';
+ state.pendingFulfillment=false;state.editingOrderId=null;state.orderSelectedKey=null;
+ for(const id of ['orderCustomer','orderCustomerPhone','orderCustomerAddress','orderGeneralNote','orderSearch']){
+  const field=$(id);if(field)field.value='';
+ }
+ await saveOrderDraft();
+ renderOrder();renderOrderSuggestions();updateFulfillmentPanel();
+ alertBox('✅ تم تصفير الطلبية: الاسم والرقم والعنوان والملاحظات والمواد. هسة تگدر تبدأ طلبية جديدة. الطلبات المحفوظة والجرد ما تغيرت.');
+}
 async function sendOrderToGroup(order=null){
   const items=order?.items||state.orderItems;
   if(!items.length)return alertBox('أضف مادة للطلبية أولاً.','error');
@@ -162,7 +186,7 @@ async function savedOrderAction(e){
   }
   if(action.classList.contains('open-saved')){
     if(state.orderItems.length&&!confirm('تفتح القائمة المحفوظة وتستبدل مسودة الطلبية الحالية؟'))return;
-    state.orderItems=saved.items.map(i=>({...i}));state.orderCustomer=saved.customer||'';state.orderCustomerPhone=saved.phone||'';state.orderCustomerAddress=saved.address||'';state.orderGeneralNote=saved.note||'';
+    state.orderItems=saved.items.map(i=>({...i}));state.orderCustomer=saved.customer||'';state.orderCustomerPhone=saved.phone||'';state.orderCustomerAddress=saved.address||'';state.orderGeneralNote=saved.note||'';state.pendingFulfillment=false;
     $('orderCustomer').value=state.orderCustomer;$('orderCustomerPhone').value=state.orderCustomerPhone;$('orderCustomerAddress').value=state.orderCustomerAddress;$('orderGeneralNote').value=state.orderGeneralNote;
     await saveOrderDraft();renderOrder();tabChange('orders');
   }
@@ -178,6 +202,7 @@ function renderOrder(){
   }).join(''):'<div class="empty">الطلبية فارغة. ابحث عن مادة واضغط «إضافة»، أو اضغط «+ للطلبية» من المخزون.</div>';
   $('orderMessagePreview').textContent=items.length?currentOrderText():'أضف مادة حتى تتكوّن رسالة الطلبية.';
   $('shareOrder').disabled=!items.length;$('copyOrder').disabled=!items.length;$('saveOrder').disabled=!items.length;
+  updateFulfillmentPanel();
 }
 function renderOrderSuggestions(){
   const q=nameKey($('orderSearch').value),cq=compactNameKey(q);
@@ -224,6 +249,8 @@ async function storeOrderItem(){
   tabChange('orders');
 }
 async function sendToWhatsApp(){
+  if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
+  await markOrderHandoff();
   await sendOrderToGroup();
 }
 async function copyOrder(){
@@ -326,6 +353,7 @@ async function importFromFile(file,backupOnly=false){if(!file)return;try{
    if(typeof content.orderCustomerPhone==='string')state.orderCustomerPhone=content.orderCustomerPhone.slice(0,25);
    if(typeof content.orderCustomerAddress==='string')state.orderCustomerAddress=content.orderCustomerAddress.slice(0,220);
    if(typeof content.orderGeneralNote==='string')state.orderGeneralNote=content.orderGeneralNote.slice(0,350);
+   state.pendingFulfillment=Boolean(content.pendingFulfillment);
    if(Array.isArray(content.savedOrders))state.savedOrders=content.savedOrders.filter(x=>x&&typeof x.id==='string'&&Array.isArray(x.items)&&typeof x.savedAt==='string').slice(0,500);
    $('orderCustomer').value=state.orderCustomer;$('orderCustomerPhone').value=state.orderCustomerPhone;$('orderCustomerAddress').value=state.orderCustomerAddress;$('orderGeneralNote').value=state.orderGeneralNote;
    await storageWrite();refresh();alertBox(`تم استعادة ${state.snapshots.length} ملف جرد و${state.audits.length} سجل مطابقة.`);return;
@@ -360,13 +388,17 @@ function setup(){
   if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
   const copied=await copyWhatsAppText(currentOrderText());
   if(!copied)return alertBox('تعذر نسخ الطلبية. استخدم زر مشاركة الطلبية بالواتساب، وبعدها اختار الكروب.','error');
+  await markOrderHandoff();
   window.location.assign(FULFILLMENT_GROUP_URL);
  });
  $('saveOrder').addEventListener('click',saveCurrentOrder);
  $('savedOrdersList').addEventListener('click',savedOrderAction);
  $('goToOrders').addEventListener('click',()=>tabChange('orders'));
  $('copyOrder').addEventListener('click',copyOrder);
- $('clearOrder').addEventListener('click',async ()=>{if(!state.orderItems.length&&!state.orderCustomer.trim()&&!state.orderCustomerPhone.trim()&&!state.orderCustomerAddress.trim()&&!state.orderGeneralNote.trim())return;if(!confirm('تمسح الطلبية الحالية وتبدأ طلبية جديدة؟'))return;state.orderItems=[];state.orderCustomer='';state.orderCustomerPhone='';state.orderCustomerAddress='';state.orderGeneralNote='';$('orderCustomer').value='';$('orderCustomerPhone').value='';$('orderCustomerAddress').value='';$('orderGeneralNote').value='';await saveOrderDraft();renderOrder();alertBox('تم تفريغ الطلبية. تگدر تبدأ طلبية جديدة.')});
+ $('finishOrder').addEventListener('click',completeOrder);
+ $('confirmFulfilled').addEventListener('click',completeOrder);
+ $('keepOrder').addEventListener('click',async()=>{state.pendingFulfillment=false;await saveOrderDraft();updateFulfillmentPanel()});
+ $('clearOrder').addEventListener('click',async ()=>{if(!state.orderItems.length&&!state.orderCustomer.trim()&&!state.orderCustomerPhone.trim()&&!state.orderCustomerAddress.trim()&&!state.orderGeneralNote.trim())return;if(!confirm('تمسح الطلبية الحالية وتبدأ طلبية جديدة؟'))return;state.orderItems=[];state.orderCustomer='';state.orderCustomerPhone='';state.orderCustomerAddress='';state.orderGeneralNote='';state.pendingFulfillment=false;$('orderCustomer').value='';$('orderCustomerPhone').value='';$('orderCustomerAddress').value='';$('orderGeneralNote').value='';await saveOrderDraft();renderOrder();renderOrderSuggestions();alertBox('تم تفريغ الطلبية. تگدر تبدأ طلبية جديدة.')});
  $('closeDialog').addEventListener('click',()=>$('auditDialog').close());
  $('auditForm').addEventListener('submit',async e=>{
   e.preventDefault();const g=state.groupMap.get(state.activeAuditName),curr=state.snapshots[0];if(!g||!curr)return;
@@ -376,9 +408,11 @@ function setup(){
  });
  $('exportChanges').addEventListener('click',()=>{if(!state.snapshots[1])return alertBox('لا توجد مقارنة بعد.','error');downloadCSV(state.deltas.map(d=>[d.name,d.before,d.after,d.delta,d.kind]),['المادة','السابق','الحالي','الفرق','نوع التغيير'],'sama-stock-differences.csv')});
  $('exportAudit').addEventListener('click',()=>{const items=auditData();if(!items.length)return alertBox('ماكو مطابقات محفوظة بعد.','error');downloadCSV(items.map(a=>[a.name,a.expected,a.actual,a.delta,a.note,a.at]),['المادة','رصيد البرنامج','الفعلي','الفرق','ملاحظة','الوقت'],'sama-stock-physical-count.csv')});
- $('backupBtn').addEventListener('click',()=>{if(!state.snapshots.length)return alertBox('ماكو بيانات لنسخها.','error');downloadBlob(JSON.stringify({kind:'sama-allubab-backup',schemaVersion:1,exported:new Date().toISOString(),snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderCustomerPhone:state.orderCustomerPhone,orderCustomerAddress:state.orderCustomerAddress,orderGeneralNote:state.orderGeneralNote,savedOrders:state.savedOrders}),`sama-inventory-backup-${new Date().toISOString().slice(0,10)}.json`,'application/json;charset=utf-8')});
+ $('backupBtn').addEventListener('click',()=>{if(!state.snapshots.length)return alertBox('ماكو بيانات لنسخها.','error');downloadBlob(JSON.stringify({kind:'sama-allubab-backup',schemaVersion:1,exported:new Date().toISOString(),snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderCustomerPhone:state.orderCustomerPhone,orderCustomerAddress:state.orderCustomerAddress,orderGeneralNote:state.orderGeneralNote,pendingFulfillment:state.pendingFulfillment,savedOrders:state.savedOrders}),`sama-inventory-backup-${new Date().toISOString().slice(0,10)}.json`,'application/json;charset=utf-8')});
  $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) استورد ملف mat.xls من الأعلى. 2) شوف المواد والتنبيهات. 3) ارفع ملف جديد بالأسبوع المقبل للمقارنة. 4) من «قوائم الطلبيات» أضف المواد وحدد الكميات. اضغط «مشاركة الطلبية بالواتساب»، واختار كروب تجهيز الطلبات، بعدها اضغط إرسال من داخل واتساب. 5) احفظ نسخة احتياطية كل فترة.')});
 }
-async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[];state.orderItems=Array.isArray(saved.orderItems)?saved.orderItems:[];state.orderCustomer=typeof saved.orderCustomer==='string'?saved.orderCustomer:'';state.orderCustomerPhone=typeof saved.orderCustomerPhone==='string'?saved.orderCustomerPhone:'';state.orderCustomerAddress=typeof saved.orderCustomerAddress==='string'?saved.orderCustomerAddress:'';state.orderGeneralNote=typeof saved.orderGeneralNote==='string'?saved.orderGeneralNote:'';state.savedOrders=Array.isArray(saved.savedOrders)?saved.savedOrders:[];$('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
+async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[];state.orderItems=Array.isArray(saved.orderItems)?saved.orderItems:[];state.orderCustomer=typeof saved.orderCustomer==='string'?saved.orderCustomer:'';state.orderCustomerPhone=typeof saved.orderCustomerPhone==='string'?saved.orderCustomerPhone:'';state.orderCustomerAddress=typeof saved.orderCustomerAddress==='string'?saved.orderCustomerAddress:'';state.orderGeneralNote=typeof saved.orderGeneralNote==='string'?saved.orderGeneralNote:'';state.pendingFulfillment=Boolean(saved.pendingFulfillment);state.savedOrders=Array.isArray(saved.savedOrders)?saved.savedOrders:[];$('orderCustomer').value=state.orderCustomer;$('orderCustomerPhone').value=state.orderCustomerPhone;$('orderCustomerAddress').value=state.orderCustomerAddress;$('orderGeneralNote').value=state.orderGeneralNote}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
  refresh();if(location.hash==='#orders'||new URLSearchParams(location.search).get('page')==='orders')tabChange('orders');if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(e=>console.log(e));}
+window.addEventListener('pageshow',()=>updateFulfillmentPanel());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateFulfillmentPanel()});
 document.addEventListener('DOMContentLoaded',main);
