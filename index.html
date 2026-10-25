@@ -125,7 +125,10 @@ async function bridgeKey(authRecords){
  return crypto.subtle.importKey('raw',digest,{name:'AES-GCM'},false,['decrypt']);
 }
 async function decryptNew(authRecords){
- const p=dataset.payload,key=await bridgeKey(authRecords);
+ const anchor=authRecords.find(r=>String(r.name||'').trim()==='شركة الضمان'&&String(r.phone||'').trim()==='07710234436');
+  const numeric=String(anchor&&anchor.amount||'').match(/-?[\d,]+(?:\.\d+)?/);
+  const bal=numeric?String(Math.round(Number(numeric[0].replace(/,/g,'')))):'';
+  const p=(dataset.payload_candidates||{})[bal]||dataset.payload,key=await bridgeKey(authRecords);
  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bytes(p.nonce),additionalData:new TextEncoder().encode('sama-allubab-debts-v3-bridge')},key,b64bytes(p.cipher));
  const raw=dataset.mode==='bridge-v4-gzip' ? await gunzip(new Uint8Array(plain)) : plain;
  return JSON.parse(new TextDecoder().decode(raw));
