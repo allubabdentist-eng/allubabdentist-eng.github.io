@@ -71,7 +71,31 @@ function renderInventory(){
   $('loadMore').hidden=found.length<=visible.length;
   $('loadMore').textContent=`عرض المزيد (${fmtn(found.length-visible.length)} باقي)`;
 }
-/* Purchase/fulfillment order: draft is stored locally, independent from stock amounts. */
+/* Purchase/fulfillment order: draft is stored locally, independent from stock amounts.
+ * WhatsApp invite links navigate to a group, but cannot prefill and send messages into it. */
+const FULFILLMENT_GROUP_URL='https://chat.whatsapp.com/Ii4ka6sJg2144m47d6Q2OU?s=cl&p=i&mlu=4&ilr=4';
+async function copyWhatsAppText(message){
+  try {
+    if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(message);return true}
+  }catch(e){console.warn('Clipboard API unavailable',e)}
+  try {
+    const field=document.createElement('textarea');
+    field.value=message;field.setAttribute('readonly','');
+    field.style.cssText='position:fixed;top:0;left:-9999px;opacity:0';
+    document.body.appendChild(field);field.focus();field.select();
+    const ok=document.execCommand('copy');field.remove();
+    return Boolean(ok);
+  }catch(e){console.warn('Clipboard fallback unavailable',e);return false}
+}
+async function sendOrderToGroup(order=null){
+  const items=order?.items||state.orderItems;
+  if(!items.length)return alertBox('أضف مادة للطلبية أولاً.','error');
+  const copied=await copyWhatsAppText(currentOrderText(order));
+  if(!copied)return alertBox('ما كدرنا ننسخ الطلبية. اضغط «نسخ الطلبية» أو انسخ النص من المعاينة، وبعدين افتح الكروب.','error');
+  // The text is on the clipboard. The user pastes and explicitly sends it in the group.
+  window.location.assign(FULFILLMENT_GROUP_URL);
+}
+
 function currentOrderText(order=null){
   const items=order?.items||state.orderItems;
   const customer=String(order?.customer??state.orderCustomer);
@@ -88,7 +112,7 @@ function currentOrderText(order=null){
 function renderSavedOrders(){
   const items=state.savedOrders;
   $('savedOrdersCount').textContent=fmtn(items.length)+' قائمة';
-  $('savedOrdersList').innerHTML=items.length?items.map(o=>`<div class="saved-order-item" data-saved-id="${esc(o.id)}"><div class="save-title">${esc(o.customer||'طلبية بدون اسم')}</div><div class="saved-meta">${fmtn(o.items.length)} مادة • ${new Date(o.savedAt).toLocaleString('ar-IQ')}</div><div class="saved-actions"><button class="smallbtn open-saved" type="button" data-saved-id="${esc(o.id)}">فتح وتعديل</button><button class="smallbtn send-saved" type="button" data-saved-id="${esc(o.id)}">إرسال للواتساب</button><button class="smallbtn delete-saved" type="button" data-saved-id="${esc(o.id)}">حذف</button></div></div>`).join(''):'<div class="empty">ما عندك قوائم محفوظة بعد. أضف مواد وبعدين اضغط «حفظ ضمن القوائم».</div>';
+  $('savedOrdersList').innerHTML=items.length?items.map(o=>`<div class="saved-order-item" data-saved-id="${esc(o.id)}"><div class="save-title">${esc(o.customer||'طلبية بدون اسم')}</div><div class="saved-meta">${fmtn(o.items.length)} مادة • ${new Date(o.savedAt).toLocaleString('ar-IQ')}</div><div class="saved-actions"><button class="smallbtn open-saved" type="button" data-saved-id="${esc(o.id)}">فتح وتعديل</button><button class="smallbtn send-saved" type="button" data-saved-id="${esc(o.id)}">نسخ وفتح كروب التجهيز</button><button class="smallbtn delete-saved" type="button" data-saved-id="${esc(o.id)}">حذف</button></div></div>`).join(''):'<div class="empty">ما عندك قوائم محفوظة بعد. أضف مواد وبعدين اضغط «حفظ ضمن القوائم».</div>';
 }
 async function saveCurrentOrder(){
   if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
@@ -100,7 +124,7 @@ async function savedOrderAction(e){
   const action=e.target.closest('button[data-saved-id]');if(!action)return;
   const saved=state.savedOrders.find(i=>i.id===action.dataset.savedId);if(!saved)return;
   if(action.classList.contains('send-saved')){
-    window.location.assign('https://wa.me/?text='+encodeURIComponent(currentOrderText(saved)));return;
+    await sendOrderToGroup(saved);return;
   }
   if(action.classList.contains('delete-saved')){
     if(!confirm('متأكد تريد تحذف هذي الطلبية من القوائم؟'))return;
@@ -158,10 +182,7 @@ async function storeOrderItem(){
   tabChange('orders');
 }
 async function sendToWhatsApp(){
-  if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
-  // A click opens WhatsApp's contact/group picker. The user explicitly chooses the group and sends.
-  const url='https://wa.me/?text='+encodeURIComponent(currentOrderText());
-  window.location.assign(url);
+  await sendOrderToGroup();
 }
 async function copyOrder(){
   if(!state.orderItems.length)return;
@@ -288,6 +309,7 @@ function setup(){
  $('orderCustomer').addEventListener('input',e=>{state.orderCustomer=e.target.value;saveOrderDraft();renderOrder()});
  $('orderGeneralNote').addEventListener('input',e=>{state.orderGeneralNote=e.target.value;saveOrderDraft();renderOrder()});
  $('shareOrder').addEventListener('click',sendToWhatsApp);
+ $('openFulfillmentGroup').addEventListener('click',()=>window.location.assign(FULFILLMENT_GROUP_URL));
  $('saveOrder').addEventListener('click',saveCurrentOrder);
  $('savedOrdersList').addEventListener('click',savedOrderAction);
  $('goToOrders').addEventListener('click',()=>tabChange('orders'));
@@ -303,7 +325,7 @@ function setup(){
  $('exportChanges').addEventListener('click',()=>{if(!state.snapshots[1])return alertBox('لا توجد مقارنة بعد.','error');downloadCSV(state.deltas.map(d=>[d.name,d.before,d.after,d.delta,d.kind]),['المادة','السابق','الحالي','الفرق','نوع التغيير'],'sama-stock-differences.csv')});
  $('exportAudit').addEventListener('click',()=>{const items=auditData();if(!items.length)return alertBox('ماكو مطابقات محفوظة بعد.','error');downloadCSV(items.map(a=>[a.name,a.expected,a.actual,a.delta,a.note,a.at]),['المادة','رصيد البرنامج','الفعلي','الفرق','ملاحظة','الوقت'],'sama-stock-physical-count.csv')});
  $('backupBtn').addEventListener('click',()=>{if(!state.snapshots.length)return alertBox('ماكو بيانات لنسخها.','error');downloadBlob(JSON.stringify({kind:'sama-allubab-backup',schemaVersion:1,exported:new Date().toISOString(),snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderGeneralNote:state.orderGeneralNote,savedOrders:state.savedOrders}),`sama-inventory-backup-${new Date().toISOString().slice(0,10)}.json`,'application/json;charset=utf-8')});
- $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) استورد ملف mat.xls من الأعلى. 2) شوف المواد والتنبيهات. 3) ارفع ملف جديد بالأسبوع المقبل للمقارنة. 4) من «قوائم الطلبيات» ابحث عن المواد وحدد الكميات واضغط «إرسال للواتساب» واختر الكروب. 5) احفظ نسخة احتياطية كل فترة.')});
+ $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) استورد ملف mat.xls من الأعلى. 2) شوف المواد والتنبيهات. 3) ارفع ملف جديد بالأسبوع المقبل للمقارنة. 4) من «قوائم الطلبيات» أضف المواد وحدد الكميات. اضغط «نسخ الطلبية وفتح كروب تجهيز الطلبات» ثم الصق الطلبية بالكروب واضغط إرسال. 5) احفظ نسخة احتياطية كل فترة.')});
 }
 async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[];state.orderItems=Array.isArray(saved.orderItems)?saved.orderItems:[];state.orderCustomer=typeof saved.orderCustomer==='string'?saved.orderCustomer:'';state.orderGeneralNote=typeof saved.orderGeneralNote==='string'?saved.orderGeneralNote:'';state.savedOrders=Array.isArray(saved.savedOrders)?saved.savedOrders:[];$('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
  refresh();if(location.hash==='#orders'||new URLSearchParams(location.search).get('page')==='orders')tabChange('orders');if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(e=>console.log(e));}
