@@ -216,7 +216,10 @@ function renderOrderSuggestions(){
   $('orderSuggestions').innerHTML=list.length?list.map(g=>`<div class="order-suggest"><div><strong>${esc(g.name)}</strong><span class="stock-balance ${g.quantity<=0?'low':''}">المتوفر بالمخزن: ${fmtn(g.quantity)} قطعة</span></div><button class="smallbtn order-add" type="button" data-key="${esc(g.key)}">+ إضافة</button></div>`).join(''):'<div class="stock-info">ما لكينا مادة مطابقة بالجرد الحالي. جرّب اسم ثاني أو أضف مادة يدوية (بدون رصيد معتمد).</div>';
 }
 
+let orderDialogOrigin=null;
 function showOrderDialog(key=null,id=null){
+ // Remember where the user was working before iOS Safari opens the modal.
+ orderDialogOrigin={tab:state.activeTab,scrollY:window.scrollY};
   const item=id?state.orderItems.find(x=>x.id===id):null;
   const product=key?state.groupMap.get(key):null;
   state.editingOrderId=item?.id||null;
@@ -236,6 +239,27 @@ function updateOrderStockPreview(){
   $('orderCurrentStock').textContent=curr?'المتوفر بالمخزن: '+fmtn(curr.quantity)+' قطعة (الرصيد ما يتغير بمجرد الطلب)':state.snapshots.length?'المادة مو موجودة بالجرد الحالي — دقّق الاسم':'ماكو جرد محمّل حتى نعرف كمية المادة';
 }
 async function saveOrderDraft(){try{await storageWrite()}catch(err){console.warn('Order storage error',err);alertBox('تعذر حفظ الطلبية على هذا الجهاز. تگدر تنسخها احتياطياً.','error')}}
+function restoreOrderEntryScroll(origin,wasEditing){
+ let cancelled=false;
+ const cancel=()=>{cancelled=true;};
+ window.addEventListener('touchstart',cancel,{passive:true});
+ window.addEventListener('wheel',cancel,{passive:true});
+ const restore=()=>{
+   if(cancelled||document.querySelector('dialog[open]')||state.activeTab!==origin.tab)return;
+   let y=origin.scrollY;
+   if(origin.tab==='orders'&&!wasEditing){
+     const el=$('orderSearch');
+     const viewport=window.visualViewport?.height||window.innerHeight;
+     const desiredOffset=Math.max(90,Math.min(145,viewport*.23));
+     y=window.scrollY+el.getBoundingClientRect().top-desiredOffset;
+   }
+   window.scrollTo({top:Math.max(0,y),left:0,behavior:'instant'});
+ };
+ // iPhone hides the keyboard after dialog.close(); preserve the position as it settles.
+ requestAnimationFrame(()=>requestAnimationFrame(restore));
+ setTimeout(restore,180);
+ setTimeout(()=>{restore();window.removeEventListener('touchstart',cancel);window.removeEventListener('wheel',cancel);},500);
+}
 async function storeOrderItem(){
   const wasEditing=Boolean(state.editingOrderId);
   const name=cleanName($('orderItemName').value),qty=Number($('orderItemQty').value),note=$('orderItemNote').value.trim();
@@ -246,13 +270,19 @@ async function storeOrderItem(){
   const old=state.editingOrderId?state.orderItems.find(i=>i.id===state.editingOrderId):state.orderItems.find(i=>i.key===matchKey);
   if(old){old.name=name;old.key=matchKey;old.quantity=state.editingOrderId?qty:old.quantity+qty;if(note)old.note=note;else if(state.editingOrderId)old.note=''}
   else state.orderItems.push({id:'order-'+Date.now()+'-'+Math.random().toString(36).slice(2),key:matchKey,name,quantity:qty,note});
-  $('orderDialog').close();await saveOrderDraft();renderOrder();
-  $('orderSearch').value='';renderOrderSuggestions();
-  if(state.activeTab!=='orders')tabChange('orders',false);
-  // Keep the next-item search visible instead of jumping to the page top.
-  if(!wasEditing)requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    $('orderSearch').scrollIntoView({block:'center',behavior:'auto'});
-  }));
+  const origin=orderDialogOrigin||{tab:state.activeTab,scrollY:window.scrollY};
+  // Safari can restore dialog focus and scroll after close, so restore when the keyboard settles.
+  $('orderDialog').close();
+  await saveOrderDraft();renderOrder();
+  if(origin.tab==='orders'&&!wasEditing){
+    $('orderSearch').value='';
+    renderOrderSuggestions();
+  }
+  // Never switch tabs after adding a product: inventory stays on inventory,
+  // order search stays on the search box, and edits return to their previous spot.
+  if(state.activeTab!==origin.tab)tabChange(origin.tab,false);
+  restoreOrderEntryScroll(origin,wasEditing);
+  orderDialogOrigin=null;
 }
 async function sendToWhatsApp(){
   if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
@@ -424,14 +454,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateFulf
 /* Keep the original home-screen app updated; do not disturb an active order form. */
 function setupAppUpdate(){
  if(!('serviceWorker' in navigator)||location.protocol!=='https:')return;
- const hadController=Boolean(navigator.serviceWorker.controller);
- let reloading=false;
- navigator.serviceWorker.addEventListener('controllerchange',()=>{
-  if(!hadController||reloading||document.visibilityState==='hidden')return;
-  if(document.querySelector('dialog[open]')||document.activeElement?.matches('input,textarea,select'))return;
-  try{if(sessionStorage.getItem('sama-stock-reloaded-v15'))return;sessionStorage.setItem('sama-stock-reloaded-v15','1')}catch(e){}
-  reloading=true;location.reload();
- });
+ // Avoid reloading a live order during a service-worker update; refresh on next launch.
  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(e=>console.warn('App update check:',e));
 }
 document.addEventListener('DOMContentLoaded',()=>{setupAppUpdate();main()});
