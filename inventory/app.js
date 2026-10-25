@@ -413,7 +413,20 @@ function setup(){
  $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) اضغط ربط التحديث المباشر أول مرة وأدخل رمز دخول الديون، بعدها المخزون يتحدث من نفس الأيقونة. 2) شوف المواد والتنبيهات. 3) كل جرد جديد ينزل تلقائياً بعد نشره. 4) من «قوائم الطلبيات» أضف المواد وحدد الكميات. اضغط «مشاركة الطلبية بالواتساب»، واختار كروب تجهيز الطلبات، بعدها اضغط إرسال من داخل واتساب. 5) احفظ نسخة احتياطية كل فترة.')});
 }
 async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[];state.orderItems=Array.isArray(saved.orderItems)?saved.orderItems:[];state.orderCustomer=typeof saved.orderCustomer==='string'?saved.orderCustomer:'';state.orderCustomerPhone=typeof saved.orderCustomerPhone==='string'?saved.orderCustomerPhone:'';state.orderCustomerAddress=typeof saved.orderCustomerAddress==='string'?saved.orderCustomerAddress:'';state.orderGeneralNote=typeof saved.orderGeneralNote==='string'?saved.orderGeneralNote:'';state.pendingFulfillment=Boolean(saved.pendingFulfillment);state.savedOrders=Array.isArray(saved.savedOrders)?saved.savedOrders:[];$('orderCustomer').value=state.orderCustomer;$('orderCustomerPhone').value=state.orderCustomerPhone;$('orderCustomerAddress').value=state.orderCustomerAddress;$('orderGeneralNote').value=state.orderGeneralNote}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
- refresh();await syncStockRemote(false);if(location.hash==='#orders'||new URLSearchParams(location.search).get('page')==='orders')tabChange('orders');if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(e=>console.log(e));}
+ refresh();await syncStockRemote(false);if(location.hash==='#orders'||new URLSearchParams(location.search).get('page')==='orders')tabChange('orders');}
 window.addEventListener('pageshow',()=>updateFulfillmentPanel());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateFulfillmentPanel()});
-document.addEventListener('DOMContentLoaded',main);
+/* Keep the original home-screen app updated; do not disturb an active order form. */
+function setupAppUpdate(){
+ if(!('serviceWorker' in navigator)||location.protocol!=='https:')return;
+ const hadController=Boolean(navigator.serviceWorker.controller);
+ let reloading=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{
+  if(!hadController||reloading||document.visibilityState==='hidden')return;
+  if(document.querySelector('dialog[open]')||document.activeElement?.matches('input,textarea,select'))return;
+  try{if(sessionStorage.getItem('sama-stock-reloaded-v14'))return;sessionStorage.setItem('sama-stock-reloaded-v14','1')}catch(e){}
+  reloading=true;location.reload();
+ });
+ navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(e=>console.warn('App update check:',e));
+}
+document.addEventListener('DOMContentLoaded',()=>{setupAppUpdate();main()});
