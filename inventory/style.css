@@ -58,3 +58,28 @@
 .fulfillment-check p{font-size:13px;margin:6px 0 14px;color:#3b6a5b}
 .fulfillment-actions{display:flex;gap:9px;flex-wrap:wrap}
 .fulfillment-actions .button{min-height:44px}
+
+
+/* v13 — slightly more compact order screens on iPhone; stop Safari focus zoom.
+   Keep editable controls >=16px to prevent automatic zoom without blocking manual pinch zoom. */
+@media (max-width:720px) {
+  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  .container { padding:13px 12px 42px; }
+  .order-fields { padding:13px; gap:10px; margin-bottom:16px; }
+  .order-add-head { margin:14px 0 8px; }
+  .order-add-head h3 { font-size:15px; }
+  .order-suggestions { margin:8px 0 18px; }
+  .product-card { padding:12px; }
+  dialog { width:min(90vw,420px); max-height:calc(100dvh - 24px); overflow-y:auto; }
+  .dialog-form { padding:17px 18px; }
+  .dialog-heading h3 { font-size:16px; }
+  .dialog-form label { margin:10px 0; }
+  .dialog-form p { font-size:12px; line-height:1.55; margin:8px 0; }
+  .dialog-form input,.dialog-form textarea { padding:9px 11px; margin-top:5px; }
+  .dialog-form .button { padding:10px 12px; font-size:14px; }
+  /* iOS Safari zooms to focused fields whose text is smaller than 16px. */
+  input,textarea,select,
+  .search-wrap input,.tools select,
+  .order-fields input,.order-fields textarea,
+  .small-filter input,.dialog-form input,.dialog-form textarea { font-size:16px; }
+}
