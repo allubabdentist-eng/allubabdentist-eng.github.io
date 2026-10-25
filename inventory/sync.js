@@ -20,7 +20,8 @@ async function _samaCloud(pass){
  const balance=m?String(Math.round(Number(m[0].replace(/,/g,'')))):String(anchor.amount||'').trim();
  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(anchor.name).trim()+'|'+String(anchor.phone).trim()+'|'+balance));
  const bridge=await crypto.subtle.importKey('raw',digest,{name:'AES-GCM'},false,['decrypt']);
- const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:_samaBytes(remote.payload.nonce),additionalData:new TextEncoder().encode(SAMA_SYNC.aad)},bridge,_samaBytes(remote.payload.cipher));
+ const payload=(remote.payload_candidates||{})[balance]||remote.payload;
+ const raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:_samaBytes(payload.nonce),additionalData:new TextEncoder().encode(SAMA_SYNC.aad)},bridge,_samaBytes(payload.cipher));
  return JSON.parse(new TextDecoder().decode(await _samaGzip(new Uint8Array(raw))));
 }
 function addSamaSyncButton(){
