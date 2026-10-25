@@ -42,3 +42,7 @@
 .stock-balance{display:block;color:#137b65;font-size:12px;font-weight:800;margin-top:7px;direction:rtl}
 .stock-balance.low{color:#ae5141}
 .stock-balance.unavailable{color:#8b6a49;font-size:11px}
+
+/* v6: customer phone and full-width notes field */
+.order-fields label:last-child{grid-column:1/-1}
+.order-fields input[type=tel]{text-align:left;unicode-bidi:plaintext}
