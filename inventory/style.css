@@ -49,3 +49,12 @@
 
 /* v7: customer address and notes have enough space on all screens */
 .order-fields label:nth-child(n+3){grid-column:1/-1}
+
+/* v8: explicit fulfillment confirmation, no accidental draft loss */
+.button.fulfilled{background:#168365;color:#fff;border:1px solid #168365;font-weight:800}
+.fulfillment-check[hidden]{display:none!important}
+.fulfillment-check{margin:16px 0;background:#e9f7f1;border:1px solid #a6daca;border-radius:15px;padding:16px;color:#174e3c;line-height:1.65}
+.fulfillment-check strong{display:block;font-size:15px}
+.fulfillment-check p{font-size:13px;margin:6px 0 14px;color:#3b6a5b}
+.fulfillment-actions{display:flex;gap:9px;flex-wrap:wrap}
+.fulfillment-actions .button{min-height:44px}
