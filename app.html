@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="19">
+<html lang="ar" dir="rtl" data-app-version="20">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -50,7 +50,7 @@
 </div>
 <div id="app" class="wrap hidden">
  <h1>تحصيل ديون سما اللباب</h1>
- <div class="sub">تحديث 25 تشرين الأول: الأرصدة محدثة حسب آخر ملف زبائن ومجهزين. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
+ <div class="sub">تحديث 25 تشرين الأول: الأرصدة محدثة حسب آخر ملف زبائن ومجهزين. القائمة مرتّبة من الدين الأكبر إلى الأصغر، بالدينار أولاً ثم الدولار، وتظهر الأرصدة الدائنة بالأخير. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
  <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
  <div class="payment-help">مراقبة التسديد تبدأ بتاريخ <b>25/10/2026</b>. بعد شهر كامل بدون حركة تسديد، يظهر الحساب المدين بالأحمر (أول يوم <b>25/11/2026</b>). عند تسجيل تسديد تبدأ مهلة شهر جديدة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
  <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">211,673,570 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 25/10/2026 المعتمد حسب الملفات الجديدة • المبالغ السابقة المسددة محسوبة بالكشف • الدينار والدولار منفصلين</div>
@@ -331,9 +331,25 @@ function saveState(st){
 }
 function waUrl(r){return 'https://wa.me/'+encodeURIComponent(r.wa_phone)+'?text='+encodeURIComponent(r.message);}
 function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function debtPriority(r){
+ const dinar=Number(r.iqd)||0,dollar=Number(r.usd)||0;
+ // Keep balances in their own currency; do not invent an exchange rate.
+ return dinar>0?0:dollar>0?1:2;
+}
+function sortedDebtRows(){
+ return [...records].sort((a,b)=>{
+  const pa=debtPriority(a),pb=debtPriority(b);
+  if(pa!==pb)return pa-pb;
+  const ai=Number(a.iqd)||0,bi=Number(b.iqd)||0;
+  const au=Number(a.usd)||0,bu=Number(b.usd)||0;
+  if(pa===0)return bi-ai||bu-au||String(a.name||'').localeCompare(String(b.name||''),'ar');
+  if(pa===1)return bu-au||String(a.name||'').localeCompare(String(b.name||''),'ar');
+  return Math.abs(bi)-Math.abs(ai)||Math.abs(bu)-Math.abs(au)||String(a.name||'').localeCompare(String(b.name||''),'ar');
+ });
+}
 function render(){
  const state=getState(),box=document.getElementById('cards');
- box.innerHTML=records.map((r,i)=>{
+ box.innerHTML=sortedDebtRows().map((r,i)=>{
   const late=overdue(r),last=(!r.jaguar&&r.due)?lastPaid(r):null;
   const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 ماكو تسديد من شهر</span>':'');
   const action=r.wa_phone?'<a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a>':(r.message?'<button class="wa copy" type="button" data-copy="'+esc(r.id)+'">نسخ المسج</button>':'<span class="wa disabled">لا توجد مطالبة</span>');
