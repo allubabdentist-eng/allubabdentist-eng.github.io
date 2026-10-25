@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="20">
+<html lang="ar" dir="rtl" data-app-version="21">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -35,6 +35,15 @@
 .paybtn{background:#19373c;border:1px solid #386d72;border-radius:9px;color:#c8fffa;font-size:12px;padding:8px 11px}
 .paydate{font-size:12px;color:#adc8c7}
 .toolbtn.alert-active{background:#3b1c25;border-color:#f06470;color:#ffbec7}
+
+.debts-import{border:1px solid #285658;border-radius:14px;background:#10282a;padding:13px;margin:12px 0 16px}
+.debts-import strong{color:#78e7e0;font-size:18px}
+.debts-import p{color:#c1d9d7;font-size:13px;line-height:1.6}
+.import-actions{display:flex;flex-wrap:wrap;gap:8px}
+.import-actions button{flex:1;min-width:110px;padding:12px 8px;background:#183b40;border:1px solid #3a6d72;border-radius:10px;color:#fff;font-weight:700}
+.import-actions .primary{background:#42d0ca;color:#052323}
+#manualInfo{margin-top:10px;white-space:pre-line;line-height:1.7;font-size:12px;color:#a4ebe6}
+
 </style>
 </head>
 <body>
@@ -52,6 +61,20 @@
  <h1>تحصيل ديون سما اللباب</h1>
  <div class="sub">تحديث 25 تشرين الأول: الأرصدة محدثة حسب آخر ملف زبائن ومجهزين. القائمة مرتّبة من الدين الأكبر إلى الأصغر، بالدينار أولاً ثم الدولار، وتظهر الأرصدة الدائنة بالأخير. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
  <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
+
+<section class="debts-import">
+ <strong>📥 تحديث كشوف الديون يدوياً</strong>
+ <p>استورد ملفات XLS من المربّع. كل ملف يحدث قسمه فقط، مع حفظ علامات الإرسال والتسديد. البيانات تبقى على آيفونك وما تنرفع للموقع.</p>
+ <div class="import-actions">
+  <button class="primary" id="importCustomers" type="button">+ تحديث الزبائن</button>
+  <button class="primary" id="importSuppliers" type="button">+ تحديث المجهزين</button>
+  <button id="resetImports" type="button">رجوع لكشف الأونلاين</button>
+ </div>
+ <input type="file" id="customersExcel" accept=".xls,application/vnd.ms-excel" hidden>
+ <input type="file" id="suppliersExcel" accept=".xls,application/vnd.ms-excel" hidden>
+ <div id="manualInfo" role="status" aria-live="polite">لا يوجد كشف يدوي.</div>
+</section>
+
  <div class="payment-help">مراقبة التسديد تبدأ بتاريخ <b>25/10/2026</b>. بعد شهر كامل بدون حركة تسديد، يظهر الحساب المدين بالأحمر (أول يوم <b>25/11/2026</b>). عند تسجيل تسديد تبدأ مهلة شهر جديدة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
  <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">211,673,570 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 25/10/2026 المعتمد حسب الملفات الجديدة • المبالغ السابقة المسددة محسوبة بالكشف • الدينار والدولار منفصلين</div>
  <div class="statusbar">
@@ -87,6 +110,124 @@ function recordPaid(card){
  const d=entered.trim();if(!dateOK(d)||d>today()){alert('اكتب تاريخ صحيح مو بالمستقبل بالشكل YYYY-MM-DD');return;}
  if(!confirm('تأكيد حركة تسديد للحساب '+r.name+' بتاريخ '+d+'؟\\nهذا لا يخصم المبلغ من الرصيد، ويجب تحديث كشف الديون أيضاً.'))return;
  try{const log=paymentDates();log[paymentId(r)]={date:d,recordedAt:new Date().toISOString()};localStorage.setItem(PAYMENT_KEY,JSON.stringify(log));render();showStatus('تأشّر تسديد '+r.name+' بتاريخ '+d+'، بدون تغيير الرصيد.');}catch(e){showStatus('ما كدرنا نخزن حركة التسديد.');}
+}
+
+
+const MANUAL_KEY='sama_allubab_debts_local_import_v1';
+let baseRecords=[],manualState=null;
+function importTime(s){return new Intl.DateTimeFormat('ar-IQ',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(s));}
+function encodeB64(u){let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+async function importKey(pass,salt,uses){const raw=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,uses);}
+async function sealDebts(obj,pass){
+ const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+ const key=await importKey(pass,salt,['encrypt']);
+ const buf=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj))));
+ return JSON.stringify({v:1,salt:encodeB64(salt),iv:encodeB64(iv),cipher:encodeB64(buf)});
+}
+async function loadDebts(pass){
+ const saved=localStorage.getItem(MANUAL_KEY);if(!saved)return null;
+ const v=JSON.parse(saved);if(v.v!==1)throw Error('Saved debts version invalid');
+ const key=await importKey(pass,b64bytes(v.salt),['decrypt']);
+ const buffer=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bytes(v.iv)},key,b64bytes(v.cipher));
+ const restored=JSON.parse(new TextDecoder().decode(buffer));
+ if(!restored||!restored.groups||typeof restored.groups!=='object')throw Error('Invalid saved data');
+ return restored;
+}
+function combineRecords(){
+ let arr=baseRecords.slice();
+ for(const kind of ['customer','supplier']){
+  const source=manualState?.groups?.[kind];if(!source)continue;
+  if(!Array.isArray(source.rows))throw Error('Invalid account list');
+  arr=arr.filter(r=>r.category!==kind).concat(source.rows);
+ }
+ return arr.map(hydrate);
+}
+function showImportInfo(){
+ const part=(kind)=>{const x=manualState?.groups?.[kind];return x?x.rows.length+' حساب، '+importTime(x.at)+' — '+x.file:'كشف الأونلاين';};
+ document.getElementById('manualInfo').textContent='الزبائن: '+part('customer')+'\nالمجهزين: '+part('supplier');
+ const c=records.filter(r=>r.category==='customer').length,s=records.filter(r=>r.category==='supplier').length;
+ document.getElementById('updated').textContent='الحسابات الحالية: '+(c+s)+' ('+c+' زبائن، '+s+' مجهزين). آخر تحديث أونلاين: '+(dataset?.updated_at||'');
+ document.getElementById('jagBtn').textContent='جكوار ('+records.filter(r=>r.jaguar).length+')';
+}
+async function doImport(file,kind){
+ if(!file)return;
+ try{
+  if(!lastDecryptionPassword)throw Error('ادخل رمز الدخول أولاً.');
+  if(!/\.xls$/i.test(file.name)||file.size>12*1024*1024)throw Error('يجب اختيار ملف XLS الأصلي من المربّع.');
+  const rows=parseMorabaaDebts(await file.arrayBuffer(),kind);
+  const count=records.filter(r=>r.category===kind).length;
+  if(!confirm('اسم الملف: '+file.name+'\nحسابات جديدة: '+rows.length+'، الموجودة: '+count+'.\nتريد تعتمد هذا الكشف على هذا الآيفون؟\nعلامات الإرسال وتواريخ التسديد والقسم الثاني ما تتغير.'))return;
+  const stamp=new Date().toISOString();
+  const staged={groups:{...(manualState?.groups||{}),[kind]:{rows,file:file.name,at:stamp}}};
+  const cipher=await sealDebts(staged,lastDecryptionPassword);
+  localStorage.setItem(MANUAL_KEY,cipher);
+  manualState=staged;records=combineRecords();render();showImportInfo();
+  showStatus('✓ تم استيراد '+rows.length+' حساب '+(kind==='customer'?'زبائن':'مجهزين')+'، '+importTime(stamp)+' بتوقيت بغداد. على هذا الجهاز فقط.');
+ }catch(e){showStatus('لم يتم التحديث: '+(e.message||'تعذر فتح الكشف')+'. البيانات القديمة محفوظة.');}
+}
+function resetImports(){
+ if(!localStorage.getItem(MANUAL_KEY)){showStatus('ماكو كشف يدوي محفوظ.');return;}
+ if(!confirm('تلغي استيراد الزبائن والمجهزين وترجع إلى كشف الأونلاين؟ علامات الإرسال والتسديد تبقى.'))return;
+ localStorage.removeItem(MANUAL_KEY);manualState=null;records=combineRecords();render();showImportInfo();showStatus('رجعت بيانات الأونلاين، العلامات بقت محفوظة.');
+}
+function asDataView(u){return new DataView(u.buffer,u.byteOffset,u.byteLength);}
+
+function parseMorabaaDebts(buffer,category){
+ const data=new Uint8Array(buffer), v=asDataView(data), u16=n=>v.getUint16(n,true),u32=n=>v.getUint32(n,true);
+ if(data.length<512||u32(0)!==0xE011CFD0||u32(4)!==0xE11AB1A1)throw new Error('الملف مو بصيغة XLS القديمة الصحيحة.');
+ const secSize=2**u16(30);if(secSize!==512&&secSize!==4096)throw new Error('قطاع XLS غير مدعوم.');
+ const fatSectors=[];for(let i=0;i<109;i++){const x=u32(76+i*4);if(x<0xFFFFFFFC)fatSectors.push(x)}
+ let difat=u32(68),difatCount=u32(72);
+ for(let z=0;z<difatCount&&difat<0xFFFFFFFC;z++){
+  const off=(difat+1)*secSize;
+  for(let i=0;i<secSize/4-1;i++){const x=u32(off+i*4);if(x<0xFFFFFFFC)fatSectors.push(x)}
+  difat=u32(off+secSize-4);
+ }
+ const fat=[];for(const id of fatSectors){const off=(id+1)*secSize;if(off+secSize>data.length)throw new Error('ملف إكسل ناقص.');for(let i=0;i<secSize/4;i++)fat.push(u32(off+i*4))}
+ function stream(start,size){let id=start;const parts=[],seen=new Set();let bytes=0;
+  while(id<0xFFFFFFFC&&id<fat.length&&!seen.has(id)){
+   seen.add(id);const off=(id+1)*secSize;if(off+secSize>data.length)break;parts.push(data.subarray(off,off+secSize));bytes+=secSize;id=fat[id];
+   if(size!==undefined&&bytes>=size)break;
+  }
+  const result=new Uint8Array(size===undefined?bytes:Math.min(size,bytes));let pos=0;for(const part of parts){const n=Math.min(part.length,result.length-pos);result.set(part.subarray(0,n),pos);pos+=n;if(pos>=result.length)break}return result;
+ }
+ const dirs=stream(u32(48));const decoder=new TextDecoder('utf-16le');let workbookStart=null,workbookSize=0;
+ for(let pos=0;pos+128<=dirs.length;pos+=128){const dv=asDataView(dirs.subarray(pos,pos+128));const len=dv.getUint16(64,true);if(len<2||len>64)continue;
+  const name=decoder.decode(dirs.subarray(pos,pos+len-2));
+  if(name==='Workbook'||name==='Book'){workbookStart=dv.getUint32(116,true);workbookSize=dv.getUint32(120,true);break}
+ }
+ if(workbookStart===null)throw new Error('ما لگينا ورقة الإكسل بداخل الملف.');
+ const book=stream(workbookStart,workbookSize),bv=asDataView(book),rows=new Map();
+ for(let pos=0;pos+4<=book.length;){const code=bv.getUint16(pos,true),len=bv.getUint16(pos+2,true);const at=pos+4;if(at+len>book.length)break;
+  if(code===0x0204&&len>=9){const row=bv.getUint16(at,true),col=bv.getUint16(at+2,true),chars=bv.getUint16(at+6,true),flags=book[at+8],needed=chars*(flags&1?2:1);
+   if(9+needed<=len){let value;if(flags&1){value=decoder.decode(book.subarray(at+9,at+9+needed))}else{value='';for(let k=0;k<needed;k++)value+=String.fromCharCode(book[at+9+k])}
+    if(!rows.has(row))rows.set(row,new Map());rows.get(row).set(col,value);
+   }
+  }
+  pos+=4+len;
+ }
+
+ const values=[...rows.values()].flatMap(row=>[...row.values()]);
+ const type=values.some(v=>v.includes('حسابات الزبائن'))?'customer':values.some(v=>v.includes('حسابات مجهزين'))?'supplier':'unknown';
+ if(type!==category)throw Error('هذا مو كشف '+(category==='customer'?'الزبائن':'المجهزين')+'؛ ما تغيّر أي شي.');
+ const header=[...rows.entries()].find(([,r])=>['رقم الحساب','اسم الحساب','الرصيد بالدينار','الرصيد بالدولار'].every(h=>[...r.values()].includes(h)));
+ if(!header)throw Error('أعمدة كشف المربّع المطلوبة مو موجودة.');
+ const cols=new Map([...header[1]].map(([c,v])=>[v,c]));
+ const get=(r,h)=>String(r.get(cols.get(h))??'').trim();
+ const amount=s=>{const m=String(s).match(/-?[\d,]+(?:\.\d+)?/);return m?Number(m[0].replace(/,/g,'')):0;};
+ const out=[],seen=new Set();
+ for(const [row,r] of [...rows.entries()].sort((a,b)=>a[0]-b[0])){
+  if(row<=header[0])continue;
+  const account=get(r,'رقم الحساب'),name=get(r,'اسم الحساب');
+  if(!/^\d+$/.test(account)||!name)continue;
+  if(seen.has(account))throw Error('تكرر رقم الحساب '+account+' بالكشف.');
+  seen.add(account);
+  const iqd=amount(get(r,'الرصيد بالدينار')),usd=amount(get(r,'الرصيد بالدولار'));
+  if(!Number.isFinite(iqd)||!Number.isFinite(usd))throw Error('رصيد مو صحيح داخل الكشف.');
+  if(iqd||usd)out.push({category,account,name,phone:get(r,'رقم الهاتف'),iqd,usd});
+ }
+ if(out.length<(category==='customer'?10:2))throw Error('عدد الحسابات أقل من المتوقع، ما صار تحديث.');
+ return out;
 }
 
 function b64bytes(s){const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0));}
@@ -177,7 +318,7 @@ function hydrate(x){
  r.usd=u?(fmt(u)+' $ — '+typ(u)):'';
  const pp=String(r.phone||'').match(/(?:^|\D)(07[5-9]\d{8})(?=\D|$)/);
  r.wa_phone=pp?'964'+pp[1].slice(1):'';
- let msg=[(r.name.startsWith('د ')?r.name:'د. '+r.name)+' 🌷','للتذكير فقط، حسب كشف حساب سما اللباب بتاريخ 25/10/2026:'];
+ let msg=[(r.name.startsWith('د ')?r.name:'د. '+r.name)+' 🌷','للتذكير فقط، حسب آخر كشف حساب سما اللباب:'];
  if(i)msg.push('• رصيد '+typ(i)+' بالدينار: '+fmt(i)+' د.ع.');
  if(u)msg.push('• رصيد '+typ(u)+' بالدولار: '+fmt(u)+' $.');
  if(r.review)msg.push('يرجى مراجعة وتسوية كل رصيد حسب عملته، مع الأخذ بنظر الاعتبار الأرصدة الدائنة الموضحة أعلاه.');
@@ -382,10 +523,10 @@ async function refreshRemoteDebts(showMessage=false){
   }
   const pass=lastDecryptionPassword||localStorage.getItem(REMEMBER_KEY)||'';
   if(!pass)throw new Error('unlock required');
-  const fresh=(await decrypt(pass)).map(hydrate);
-  records=fresh;
-  render();
-  showStatus('✓ تم تحديث الديون تلقائياً بتاريخ '+dataset.updated_at+'، وحُفظت علامات الإرسال.');
+  const fresh=await decrypt(pass);
+  baseRecords=fresh;records=combineRecords();
+  render();showImportInfo();
+  showStatus('✓ تمت مراجعة كشف الأونلاين، وأي استيراد يدوي بقي محفوظاً.');
  }catch(e){
   ({dataset,authDataset,receiptDataset,SENT_KEY,POS_KEY}=previous);
   if(showMessage)showStatus('ما تم التحديث، حاول مرة ثانية مع اتصال إنترنت.');
@@ -395,11 +536,14 @@ async function refreshRemoteDebts(showMessage=false){
 async function unlock(pass,rememberPass){
  const err=document.getElementById('err');err.textContent='';
  try{
-  records=(await decrypt(pass)).map(hydrate);
+  baseRecords=await decrypt(pass);
   lastDecryptionPassword=pass;
+  let importWarning='';
+  try{manualState=await loadDebts(pass);}catch(e){manualState=null;importWarning='تنبيه: ما أمكن قراءة كشف الديون المحلي المحفوظ. ما تم حذفه.';}
+  records=combineRecords();
   if(rememberPass)localStorage.setItem(REMEMBER_KEY,pass);else localStorage.removeItem(REMEMBER_KEY);
   document.getElementById('lockScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');
-  document.getElementById('q').value=localStorage.getItem(QUERY_KEY)||'';render();
+  document.getElementById('q').value=localStorage.getItem(QUERY_KEY)||'';render();showImportInfo();if(importWarning)showStatus(importWarning);
   const y=parseInt(localStorage.getItem(POS_KEY)||'0',10);if(y)setTimeout(()=>scrollTo(0,y),60);
  }catch(e){err.textContent='رمز الدخول غير صحيح أو تعذر تحميل آخر تحديث.';}
 }
@@ -411,6 +555,12 @@ document.getElementById('lateBtn').addEventListener('click',()=>{onlyLate=!onlyL
 addEventListener('pageshow',()=>{if(records.length){render();refreshRemoteDebts(false);}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&records.length)refreshRemoteDebts(false);});
 document.getElementById('refreshDebts').addEventListener('click',()=>refreshRemoteDebts(true));
+document.getElementById('importCustomers').addEventListener('click',()=>document.getElementById('customersExcel').click());
+document.getElementById('importSuppliers').addEventListener('click',()=>document.getElementById('suppliersExcel').click());
+document.getElementById('customersExcel').addEventListener('change',function(){const file=this.files?.[0];this.value='';doImport(file,'customer');});
+document.getElementById('suppliersExcel').addEventListener('change',function(){const file=this.files?.[0];this.value='';doImport(file,'supplier');});
+document.getElementById('resetImports').addEventListener('click',resetImports);
+
 document.getElementById('restoreSent').addEventListener('click',async()=>{
  if(!confirm('علامات النسخ القديمة ممكن تكون غير دقيقة. متأكد تريد استرجاعها وإضافتها للحالات الحالية؟'))return;
  showStatus('جاري فحص سجلات النسخ السابقة…');
