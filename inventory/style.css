@@ -46,3 +46,6 @@
 /* v6: customer phone and full-width notes field */
 .order-fields label:last-child{grid-column:1/-1}
 .order-fields input[type=tel]{text-align:left;unicode-bidi:plaintext}
+
+/* v7: customer address and notes have enough space on all screens */
+.order-fields label:nth-child(n+3){grid-column:1/-1}
