@@ -53,7 +53,7 @@
  <div class="sub">تحديث 25 تشرين الأول: الأرصدة محدثة حسب آخر ملف زبائن ومجهزين. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
  <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
  <div class="payment-help">مراقبة التسديد تبدأ بتاريخ <b>25/10/2026</b>. بعد شهر كامل بدون حركة تسديد، يظهر الحساب المدين بالأحمر (أول يوم <b>25/11/2026</b>). عند تسجيل تسديد تبدأ مهلة شهر جديدة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
- <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الزبائن والمكاتب</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">211,673,570 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 24/10/2026 بعد احتساب سندات قبض 680,000 د.ع • دفعة الضمان محسوبة • الدينار والدولار منفصلين</div>
+ <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">211,673,570 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 25/10/2026 المعتمد حسب الملفات الجديدة • المبالغ السابقة المسددة محسوبة بالكشف • الدينار والدولار منفصلين</div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
@@ -95,10 +95,10 @@ async function fetchDataset(){
   fetch('data-20261025.json?v='+Date.now(),{cache:'no-store'}),
   Promise.resolve({ok:true,json:async()=>null})
  ]);
- if(!ar.ok||!dr.ok||!rr.ok)throw new Error('data or receipts load failed');
+ if(!ar.ok||!dr.ok)throw new Error('data load failed');
  authDataset=await ar.json();
  dataset=await dr.json();
- receiptDataset=await rr.json();
+ receiptDataset=null;
  SENT_KEY='sama_allubab_debt_sent_'+dataset.version;
  POS_KEY='sama_allubab_debt_scroll_'+dataset.version;
  document.getElementById('updated').textContent='آخر تحديث: '+dataset.updated_at+' — '+dataset.count+' حساب، منها '+(dataset.jaguar_count||0)+' جكوار';
