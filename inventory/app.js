@@ -2,7 +2,7 @@
 /* Sama Allubab stock control — all company data stays on the device. */
 const $ = id => document.getElementById(id);
 const nf = new Intl.NumberFormat('en-US',{maximumFractionDigits:3});
-const state = {snapshots:[],audits:[],groups:[],groupMap:new Map(),deltaMap:new Map(),deltas:[],pageSize:80,shown:80,activeTab:'inventory',activeAuditName:null,low:10};
+const state = {snapshots:[],audits:[],groups:[],groupMap:new Map(),deltaMap:new Map(),deltas:[],pageSize:80,shown:80,activeTab:'inventory',activeAuditName:null,low:10,orderItems:[],orderCustomer:'',orderGeneralNote:'',editingOrderId:null,orderSelectedKey:null};
 const dbName = 'SamaAllubabPrivateInventoryV1';
 let dbPromise;
 function db(){
@@ -14,7 +14,7 @@ function db(){
   return dbPromise;
 }
 async function storageRead(){const d=await db();return new Promise((res,rej)=>{const q=d.transaction('data','readonly').objectStore('data').get('inventory');q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}
-async function storageWrite(){const d=await db();const data={snapshots:state.snapshots,audits:state.audits};return new Promise((res,rej)=>{const tx=d.transaction('data','readwrite');tx.objectStore('data').put(data,'inventory');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function storageWrite(){const d=await db();const data={snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderGeneralNote:state.orderGeneralNote};return new Promise((res,rej)=>{const tx=d.transaction('data','readwrite');tx.objectStore('data').put(data,'inventory');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 function cleanName(v){return String(v||'').trim().replace(/\s+/g,' ')}
 function nameKey(v){return cleanName(v).toLocaleLowerCase()}
 function parseNumber(v){if(typeof v==='number')return v;const n=Number(String(v??0).replace(/,/g,'').trim());return Number.isFinite(n)?n:0}
@@ -51,9 +51,9 @@ function refresh(){
   $('statOut').textContent=latest?fmtn(state.groups.filter(g=>g.quantity===0).length):'—';
   $('statNegative').textContent=latest?fmtn(state.groups.filter(g=>g.quantity<0).length):'—';
   $('uniqueCount').textContent=fmtn(state.groups.length)+' صنف';
-  renderInventory();renderChanges();renderAudits();renderSnapshots();
+  renderInventory();renderChanges();renderAudits();renderSnapshots();renderOrder();renderOrderSuggestions();
 }
-function productCard(g){const klass=g.quantity<0?'red':g.quantity===0?'orange':'';const details=g.count>1?g.count+' أسطر بنفس الاسم':`تسلسل ${g.lines[0].line}`;return `<article class="product-card"><div><div class="product-title">${esc(g.name)}</div><div class="product-sub">${esc(details)}</div></div><div><span class="quantity ${klass}">${fmtn(g.quantity)}</span><span class="qtylabel">الكمية</span></div><div class="product-actions"><span class="subtle">${g.quantity<0?'رصيد سالب — راجع الإدخالات':g.quantity===0?'غير متوفر':g.quantity<=state.low?'كمية قليلة':'في المخزن'}</span><button class="smallbtn audit-open" data-key="${esc(g.key)}">جرد فعلي</button></div></article>`}
+function productCard(g){const klass=g.quantity<0?'red':g.quantity===0?'orange':'';const details=g.count>1?g.count+' أسطر بنفس الاسم':`تسلسل ${g.lines[0].line}`;return `<article class="product-card"><div><div class="product-title">${esc(g.name)}</div><div class="product-sub">${esc(details)}</div></div><div><span class="quantity ${klass}">${fmtn(g.quantity)}</span><span class="qtylabel">الكمية</span></div><div class="product-actions"><span class="subtle">${g.quantity<0?'رصيد سالب — راجع الإدخالات':g.quantity===0?'غير متوفر':g.quantity<=state.low?'كمية قليلة':'في المخزن'}</span><span class="stock-actions"><button class="smallbtn order-add" data-key="${esc(g.key)}">+ للطلبية</button><button class="smallbtn audit-open" data-key="${esc(g.key)}">جرد فعلي</button></span></div></article>`}
 function renderInventory(){
   const q=nameKey($('search').value),f=$('filter').value;
   const found=state.groups.filter(g=>{
@@ -70,6 +70,75 @@ function renderInventory(){
   $('inventoryList').innerHTML=visible.length?visible.map(productCard).join(''):`<div class="empty">${!state.snapshots.length?'ارفع ملف mat.xls أو ملف بيانات الجرد للبدء.':'ماكو مواد تطابق البحث.'}</div>`;
   $('loadMore').hidden=found.length<=visible.length;
   $('loadMore').textContent=`عرض المزيد (${fmtn(found.length-visible.length)} باقي)`;
+}
+/* Purchase/fulfillment order: draft is stored locally, independent from stock amounts. */
+function currentOrderText(){
+  const stamp=new Date().toLocaleString('ar-IQ',{dateStyle:'short',timeStyle:'short'});
+  const lines=['*طلبية تجهيز - سما اللباب*'];
+  if(state.orderCustomer.trim())lines.push('الزبون/الجهة: '+state.orderCustomer.trim());
+  lines.push('التاريخ: '+stamp,'');
+  state.orderItems.forEach((item,i)=>{lines.push((i+1)+'. '+item.name+' — الكمية: '+fmtn(item.quantity));if(item.note)lines.push('   ملاحظة: '+item.note)});
+  if(state.orderGeneralNote.trim())lines.push('','ملاحظات عامة: '+state.orderGeneralNote.trim());
+  lines.push('','يرجى تأكيد التجهيز.');
+  return lines.join('\n');
+}
+function renderOrder(){
+  const items=state.orderItems;
+  $('orderCount').textContent=fmtn(items.length)+' مادة';
+  $('orderTabCount').textContent=fmtn(items.length);
+  $('orderUnitCount').textContent=fmtn(items.reduce((s,i)=>s+i.quantity,0))+' قطعة';
+  $('orderItems').innerHTML=items.length?items.map(item=>`<article class="product-card order-line" data-order-id="${esc(item.id)}"><div><div class="product-title">${esc(item.name)}</div>${item.note?`<div class="product-sub">${esc(item.note)}</div>`:''}</div><div class="order-line-actions"><span class="qty">× ${fmtn(item.quantity)}</span><button type="button" class="smallbtn order-edit" data-order-id="${esc(item.id)}">تعديل</button><button type="button" class="smallbtn order-remove" data-order-id="${esc(item.id)}">حذف</button></div></article>`).join(''):'<div class="empty">الطلبية فارغة. ابحث عن مادة واضغط «إضافة»، أو اضغط «+ للطلبية» من المخزون.</div>';
+  $('orderMessagePreview').textContent=items.length?currentOrderText():'أضف مادة حتى تتكوّن رسالة الطلبية.';
+  $('shareOrder').disabled=!items.length;$('copyOrder').disabled=!items.length;
+}
+function renderOrderSuggestions(){
+  const q=nameKey($('orderSearch').value);
+  const list=q?state.groups.filter(g=>nameKey(g.name).includes(q)).slice(0,20):[];
+  $('orderSuggestions').innerHTML=list.length?list.map(g=>`<div class="order-suggest"><div><strong>${esc(g.name)}</strong><small>بالمخزن: ${fmtn(g.quantity)}</small></div><button class="smallbtn order-add" type="button" data-key="${esc(g.key)}">+ إضافة</button></div>`).join(''):q?`<div class="muted">ما لكينا مادة مطابقة. تگدر تضيفها من «مادة يدوية».</div>`:'';
+}
+function showOrderDialog(key=null,id=null){
+  const item=id?state.orderItems.find(x=>x.id===id):null;
+  const product=key?state.groupMap.get(key):null;
+  state.editingOrderId=item?.id||null;
+  state.orderSelectedKey=product?.key||item?.key||null;
+  $('orderDialogTitle').textContent=item?'تعديل مادة الطلبية':'إضافة مادة للطلبية';
+  $('saveOrderItem').textContent=item?'حفظ التعديل':'إضافة للطلبية';
+  $('orderItemName').value=item?.name||product?.name||'';
+  $('orderItemName').readOnly=Boolean(product)||Boolean(item?.key&&state.groupMap.has(item.key));
+  $('orderItemQty').value=item?.quantity??1;
+  $('orderItemNote').value=item?.note||'';
+  const curr=state.groupMap.get(state.orderSelectedKey);
+  $('orderCurrentStock').textContent=curr?'الرصيد الحالي بالمخزن: '+fmtn(curr.quantity)+' (لا ينقص إلا عند تسجيل حركة فعلية)':'المادة غير مرتبطة بالمخزون الحالي';
+  $('orderDialog').showModal();
+  if(!product&&!item)$('orderItemName').focus();else $('orderItemQty').focus();
+}
+async function saveOrderDraft(){try{await storageWrite()}catch(err){console.warn('Order storage error',err);alertBox('تعذر حفظ الطلبية على هذا الجهاز. تگدر تنسخها احتياطياً.','error')}}
+async function storeOrderItem(){
+  const name=cleanName($('orderItemName').value),qty=Number($('orderItemQty').value),note=$('orderItemNote').value.trim();
+  if(!name)return alertBox('اكتب اسم المادة.','error');
+  if(!Number.isFinite(qty)||qty<=0||!$('orderItemQty').value)return alertBox('الكمية لازم أكبر من صفر.','error');
+  const linked=state.orderSelectedKey&&state.groupMap.get(state.orderSelectedKey);
+  const matchKey=linked?.key||nameKey(name);
+  const old=state.editingOrderId?state.orderItems.find(i=>i.id===state.editingOrderId):state.orderItems.find(i=>i.key===matchKey);
+  if(old){old.name=name;old.key=matchKey;old.quantity=state.editingOrderId?qty:old.quantity+qty;if(note)old.note=note;else if(state.editingOrderId)old.note=''}
+  else state.orderItems.push({id:'order-'+Date.now()+'-'+Math.random().toString(36).slice(2),key:matchKey,name,quantity:qty,note});
+  $('orderDialog').close();await saveOrderDraft();renderOrder();
+  $('orderSearch').value='';renderOrderSuggestions();
+  tabChange('orders');
+}
+async function sendToWhatsApp(){
+  if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
+  // A click opens WhatsApp's contact/group picker. The user explicitly chooses the group and sends.
+  const url='https://wa.me/?text='+encodeURIComponent(currentOrderText());
+  window.location.assign(url);
+}
+async function copyOrder(){
+  if(!state.orderItems.length)return;
+  const message=currentOrderText();
+  try{await navigator.clipboard.writeText(message);alertBox('تم نسخ الطلبية. افتح كروب المجهزين بالواتساب والصقها هناك.')}catch{
+    const el=document.createElement('textarea');el.value=message;el.style.position='fixed';el.style.opacity='0';document.body.appendChild(el);el.focus();el.select();const ok=document.execCommand('copy');el.remove();
+    alertBox(ok?'تم نسخ الطلبية. الصقها بالواتساب.':'ما كدرنا ننسخها. افتح معاينة الرسالة وحدد النص وانسخه.',ok?'ok':'error');
+  }
 }
 function renderChanges(){
   const prev=state.snapshots[1],cur=state.snapshots[0];
@@ -158,6 +227,10 @@ async function importFromFile(file,backupOnly=false){if(!file)return;try{
    const merged=new Map([...state.snapshots.map(s=>[s.key,s])]);for(const s of content.snapshots){const valid=normalizeSnapshot(s);merged.set(valid.key,{...s,...valid,created:s.created||new Date().toISOString()})}
    state.snapshots=[...merged.values()].sort((a,b)=>(b.created||'').localeCompare(a.created||'')).slice(0,16);
    const audits=new Map(state.audits.map(a=>[a.id,a]));for(const a of content.audits)if(a.id&&a.snapshotKey)audits.set(a.id,a);state.audits=[...audits.values()];
+   if(Array.isArray(content.orderItems))state.orderItems=content.orderItems.filter(x=>x&&typeof x.name==='string'&&Number.isFinite(x.quantity)&&x.quantity>0).slice(0,500);
+   if(typeof content.orderCustomer==='string')state.orderCustomer=content.orderCustomer.slice(0,90);
+   if(typeof content.orderGeneralNote==='string')state.orderGeneralNote=content.orderGeneralNote.slice(0,350);
+   $('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote;
    await storageWrite();refresh();alertBox(`تم استعادة ${state.snapshots.length} ملف جرد و${state.audits.length} سجل مطابقة.`);return;
   }
   if(backupOnly)throw new Error('الملف مو نسخة احتياطية؛ من تحديث الجرد تگدر تستورد ملف المواد.');
@@ -173,7 +246,18 @@ function setup(){
  $('lowThreshold').addEventListener('input',()=>{state.low=Math.max(1,parseNumber($('lowThreshold').value));renderInventory()});
  $('loadMore').addEventListener('click',()=>{state.shown+=80;renderInventory()});
  $('changesSearch').addEventListener('input',renderChanges);$('changesFilter').addEventListener('change',renderChanges);
- $('inventoryList').addEventListener('click',e=>{const b=e.target.closest('.audit-open');if(b)openAudit(b.dataset.key)});
+ $('inventoryList').addEventListener('click',e=>{const a=e.target.closest('.order-add');if(a){showOrderDialog(a.dataset.key);return}const b=e.target.closest('.audit-open');if(b)openAudit(b.dataset.key)});
+ $('orderSuggestions').addEventListener('click',e=>{const a=e.target.closest('.order-add');if(a)showOrderDialog(a.dataset.key)});
+ $('orderSearch').addEventListener('input',renderOrderSuggestions);
+ $('addCustomItem').addEventListener('click',()=>showOrderDialog());
+ $('closeOrderDialog').addEventListener('click',()=>$('orderDialog').close());
+ $('orderItemForm').addEventListener('submit',async e=>{e.preventDefault();await storeOrderItem()});
+ $('orderItems').addEventListener('click',async e=>{const edit=e.target.closest('.order-edit'),remove=e.target.closest('.order-remove');if(edit){showOrderDialog(null,edit.dataset.orderId)}else if(remove){state.orderItems=state.orderItems.filter(i=>i.id!==remove.dataset.orderId);await saveOrderDraft();renderOrder()}});
+ $('orderCustomer').addEventListener('input',e=>{state.orderCustomer=e.target.value;saveOrderDraft();renderOrder()});
+ $('orderGeneralNote').addEventListener('input',e=>{state.orderGeneralNote=e.target.value;saveOrderDraft();renderOrder()});
+ $('shareOrder').addEventListener('click',sendToWhatsApp);
+ $('copyOrder').addEventListener('click',copyOrder);
+ $('clearOrder').addEventListener('click',async ()=>{if(!state.orderItems.length&&!state.orderCustomer.trim()&&!state.orderGeneralNote.trim())return;if(!confirm('تمسح الطلبية الحالية وتبدأ طلبية جديدة؟'))return;state.orderItems=[];state.orderCustomer='';state.orderGeneralNote='';$('orderCustomer').value='';$('orderGeneralNote').value='';await saveOrderDraft();renderOrder();alertBox('تم تفريغ الطلبية. تگدر تبدأ طلبية جديدة.')});
  $('closeDialog').addEventListener('click',()=>$('auditDialog').close());
  $('auditForm').addEventListener('submit',async e=>{
   e.preventDefault();const g=state.groupMap.get(state.activeAuditName),curr=state.snapshots[0];if(!g||!curr)return;
@@ -183,9 +267,9 @@ function setup(){
  });
  $('exportChanges').addEventListener('click',()=>{if(!state.snapshots[1])return alertBox('لا توجد مقارنة بعد.','error');downloadCSV(state.deltas.map(d=>[d.name,d.before,d.after,d.delta,d.kind]),['المادة','السابق','الحالي','الفرق','نوع التغيير'],'sama-stock-differences.csv')});
  $('exportAudit').addEventListener('click',()=>{const items=auditData();if(!items.length)return alertBox('ماكو مطابقات محفوظة بعد.','error');downloadCSV(items.map(a=>[a.name,a.expected,a.actual,a.delta,a.note,a.at]),['المادة','رصيد البرنامج','الفعلي','الفرق','ملاحظة','الوقت'],'sama-stock-physical-count.csv')});
- $('backupBtn').addEventListener('click',()=>{if(!state.snapshots.length)return alertBox('ماكو بيانات لنسخها.','error');downloadBlob(JSON.stringify({kind:'sama-allubab-backup',schemaVersion:1,exported:new Date().toISOString(),snapshots:state.snapshots,audits:state.audits}),`sama-inventory-backup-${new Date().toISOString().slice(0,10)}.json`,'application/json;charset=utf-8')});
- $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) استورد ملف mat.xls من الأعلى. 2) شوف المواد والتنبيهات. 3) ارفع ملف جديد بالأسبوع المقبل للمقارنة. 4) احفظ نسخة احتياطية كل فترة.')});
+ $('backupBtn').addEventListener('click',()=>{if(!state.snapshots.length)return alertBox('ماكو بيانات لنسخها.','error');downloadBlob(JSON.stringify({kind:'sama-allubab-backup',schemaVersion:1,exported:new Date().toISOString(),snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderGeneralNote:state.orderGeneralNote}),`sama-inventory-backup-${new Date().toISOString().slice(0,10)}.json`,'application/json;charset=utf-8')});
+ $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) استورد ملف mat.xls من الأعلى. 2) شوف المواد والتنبيهات. 3) ارفع ملف جديد بالأسبوع المقبل للمقارنة. 4) من «الطلبية» ابحث عن المواد وحدد الكميات واضغط «إرسال للواتساب» واختر الكروب. 5) احفظ نسخة احتياطية كل فترة.')});
 }
-async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[]}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
+async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[];state.orderItems=Array.isArray(saved.orderItems)?saved.orderItems:[];state.orderCustomer=typeof saved.orderCustomer==='string'?saved.orderCustomer:'';state.orderGeneralNote=typeof saved.orderGeneralNote==='string'?saved.orderGeneralNote:'';$('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
  refresh();if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(e=>console.log(e));}
 document.addEventListener('DOMContentLoaded',main);
