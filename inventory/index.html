@@ -12,17 +12,17 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="style.css?v=11" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 11</small></span></div>
+    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 12</small></span></div>
     <button id="btnHelp" class="header-btn" title="طريقة الاستخدام">؟</button>
   </header>
 
   <main class="container">
     <section class="hero">
-      <div><span class="eyebrow">SAMA ALLUBAB / STOCK CONTROL</span><h1>مخزون المكتب</h1><p id="currentDateLabel">يتحدث الجرد من النسخة المنشورة عند فتح التطبيق بعد ربطه أول مرة</p></div>
+      <div><span class="eyebrow">SAMA ALLUBAB / STOCK CONTROL</span><h1>مخزون المكتب</h1><p id="currentDateLabel">آخر جرد مخزون يتم سحبه تلقائياً من التحديث المنشور بعد ربط الجهاز أول مرة</p></div>
       <div class="hero-action"><button id="goToOrders" class="main-upload orders-quick" type="button">🛒 افتح قوائم الطلبيات</button><label class="main-upload" for="fileInput"><span>＋</span> تحديث الجرد</label><input id="fileInput" type="file" accept=".xls,.json,application/json,application/vnd.ms-excel" hidden/><small>يدعم تصدير المربّع بصيغة XLS وملف JSON</small></div>
     </section>
 
@@ -113,6 +113,6 @@
   <nav class="mobile-nav"><button class="active" data-tab="inventory">المخزون</button><button data-tab="orders">🛒 القوائم</button><button data-tab="changes">المقارنة</button><button data-tab="audit">الجرد</button><button data-tab="settings">الملفات</button></nav>
   <dialog id="auditDialog"><form id="auditForm" method="dialog" class="dialog-form"><div class="dialog-heading"><h3>مطابقة جرد يدوي</h3><button type="button" id="closeDialog" class="plain-x">×</button></div><p id="auditProductName"></p><p>رصيد البرنامج: <strong id="auditExpected"></strong></p><label>العدد الفعلي بالمخزن<input type="number" id="auditActual" step="any" required inputmode="decimal" /></label><label>ملاحظة (اختياري)<textarea id="auditNote" placeholder="مثلاً: بعد الجرد المسائي"></textarea></label><button class="button primary" type="submit">حفظ المطابقة</button></form></dialog>
   <dialog id="orderDialog"><form id="orderItemForm" class="dialog-form"><div class="dialog-heading"><h3 id="orderDialogTitle">إضافة مادة للطلبية</h3><button type="button" id="closeOrderDialog" class="plain-x">×</button></div><label>اسم المادة<input type="text" id="orderItemName" maxlength="250" required /></label><p class="muted" id="orderCurrentStock"></p><label>الكمية المطلوبة<input id="orderItemQty" type="number" min="0.001" step="any" inputmode="decimal" value="1" required /></label><label>ملاحظة للمادة (اختياري)<input id="orderItemNote" maxlength="220" type="text" placeholder="مثلاً: مقاس معين" /></label><button class="button primary" type="submit" id="saveOrderItem">إضافة للطلبية</button></form></dialog>
-  <script src="sync.js?v=11" defer></script>
-  <script src="app.js?v=11" defer></script>
+  <script src="sync.js?v=12" defer></script>
+  <script src="app.js?v=12" defer></script>
 </body></html>
