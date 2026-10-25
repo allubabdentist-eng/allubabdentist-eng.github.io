@@ -27,3 +27,12 @@
 .order-preview summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--teal)}
 .order-preview pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;direction:rtl;font-size:13px;line-height:1.8;margin:10px 2px 0}
 @media(max-width:720px){.order-fields{grid-template-columns:1fr}.order-line{grid-template-columns:1fr}.order-line-actions{justify-content:space-between}.mobile-nav button{font-size:11px;padding:9px 5px}.order-actions .button{flex-grow:1}}
+
+/* V3: clear entry point and saved lists on the iPhone */
+.orders-quick{border:none;background:#ff964c;color:#1b393d;font-weight:900;justify-content:center;width:100%;text-align:center;font-size:15px;box-shadow:0 4px 10px #0002}
+.saved-order-block{margin:26px 0 12px;padding:17px 14px;background:#e9f4f5;border:1px solid #c8e2e6;border-radius:16px}
+.saved-order-block .order-add-head{margin:0 0 13px}.saved-order-item{background:#fff;border:1px solid #c9dfe2;border-radius:12px;padding:13px;margin-bottom:8px}
+.saved-order-item .save-title{font-size:14px;font-weight:800;margin-bottom:4px}.saved-order-item .saved-meta{color:var(--muted);font-size:11px;margin-bottom:11px}
+.saved-order-item .saved-actions{display:flex;flex-wrap:wrap;gap:7px}.saved-order-item .saved-actions .smallbtn{font-size:12px;padding:8px 12px}
+.saved-order-item .saved-actions .send-saved{background:#168b61;color:#fff;border-color:#168b61}
+@media(max-width:720px){.hero-action{gap:11px}.orders-quick{min-height:47px}.mobile-nav button[data-tab="orders"]{color:#066b74;font-weight:900}.mobile-nav button[data-tab="orders"].active{background:#075d68;color:white}.saved-order-block{padding:13px 10px}}

@@ -7,22 +7,22 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#075d68" />
   <meta name="description" content="مراقبة مخزون سما اللباب — محلي على جهازك" />
-  <title>مخزون سما اللباب</title>
+  <title>قوائم ومخزون سما اللباب</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>نظام متابعة المخزون</small></span></div>
+    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 3</small></span></div>
     <button id="btnHelp" class="header-btn" title="طريقة الاستخدام">؟</button>
   </header>
 
   <main class="container">
     <section class="hero">
       <div><span class="eyebrow">SAMA ALLUBAB / STOCK CONTROL</span><h1>مخزون المكتب</h1><p id="currentDateLabel">ارفع الجرد المعتمد حتى نعرض حالة المواد</p></div>
-      <div class="hero-action"><label class="main-upload" for="fileInput"><span>＋</span> تحديث الجرد</label><input id="fileInput" type="file" accept=".xls,.json,application/json,application/vnd.ms-excel" hidden/><small>يدعم تصدير المربّع بصيغة XLS وملف JSON</small></div>
+      <div class="hero-action"><button id="goToOrders" class="main-upload orders-quick" type="button">🛒 افتح قوائم الطلبيات</button><label class="main-upload" for="fileInput"><span>＋</span> تحديث الجرد</label><input id="fileInput" type="file" accept=".xls,.json,application/json,application/vnd.ms-excel" hidden/><small>يدعم تصدير المربّع بصيغة XLS وملف JSON</small></div>
     </section>
 
     <div class="privacy-line"><span>🔒</span> البيانات تُقرأ وتُحفظ على هذا الجهاز فقط. لا تُرسل إلى موقع أو سيرفر.</div>
@@ -38,7 +38,7 @@
 
     <div class="tabbar" role="tablist">
       <button class="tab active" data-tab="inventory">المخزون</button>
-      <button class="tab" data-tab="orders">الطلبية <span class="order-count" id="orderTabCount">0</span></button>
+      <button class="tab" data-tab="orders">قوائم الطلبيات <span class="order-count" id="orderTabCount">0</span></button>
       <button class="tab" data-tab="changes">مقارنة الجرد</button>
       <button class="tab" data-tab="audit">الجرد الفعلي</button>
       <button class="tab" data-tab="settings">النسخ والملفات</button>
@@ -53,7 +53,7 @@
     </section>
 
     <section id="orders" class="tab-panel">
-      <div class="section-heading"><div><h2>طلبية تجهيز</h2><p>اختار المواد والكميات، وبعدها شارك الطلبية بكروب المجهزين بالواتساب.</p></div><div class="pill" id="orderCount">0 مادة</div></div>
+      <div class="section-heading"><div><h2>قوائم الطلبيات</h2><p>كوّن طلبية، احفظها بالقوائم، ودزها لكروب المجهزين بالواتساب.</p></div><div class="pill" id="orderCount">0 مادة</div></div>
       <div class="order-fields">
         <label>اسم الزبون / الجهة <span class="optional">(اختياري)</span><input id="orderCustomer" type="text" maxlength="90" placeholder="مثلاً: د. أحمد / عيادة النور" autocomplete="off" /></label>
         <label>ملاحظات الطلبية <span class="optional">(اختياري)</span><textarea id="orderGeneralNote" maxlength="350" rows="2" placeholder="مثلاً: التسليم اليوم أو اسم المندوب"></textarea></label>
@@ -65,9 +65,11 @@
       <div id="orderItems" class="product-list"><div class="empty">الطلبية فارغة. ابحث عن مادة واضغط إضافة.</div></div>
       <div class="order-actions">
         <button id="shareOrder" class="button whatsapp" type="button">إرسال الطلبية للواتساب</button>
+        <button id="saveOrder" class="button primary" type="button">حفظ ضمن القوائم</button>
         <button id="copyOrder" class="button secondary" type="button">نسخ الطلبية</button>
         <button id="clearOrder" class="button ghost" type="button">طلبية جديدة</button>
       </div>
+      <div class="saved-order-block"><div class="order-add-head"><h3>قوائم الطلبات المحفوظة</h3><span id="savedOrdersCount" class="pill">0 قائمة</span></div><div id="savedOrdersList" class="product-list"><div class="empty">ما عندك قوائم محفوظة بعد.</div></div></div>
       <p class="disclaimer">الطلبية تنحفظ على هذا الجهاز تلقائياً، ولا تنقص رصيد المخزن. الضغط على إرسال يفتح واتساب، وبعدها تختار كروب المجهزين وتضغط إرسال بنفسك.</p>
       <details class="order-preview"><summary>معاينة الرسالة قبل الإرسال</summary><pre id="orderMessagePreview"></pre></details>
     </section>
@@ -88,13 +90,13 @@
     <section id="settings" class="tab-panel">
       <div class="section-heading"><div><h2>إدارة البيانات</h2><p>نسخة احتياطية ضرورية حتى ما تضيع سجلاتك إذا تبدّل الجهاز أو انحذف التطبيق.</p></div></div>
       <div class="setting-card"><h3>ملفات الجرد المحفوظة</h3><div id="snapshotsList">ماكو ملفات حالياً.</div></div>
-      <div class="setting-card"><h3>نسخة احتياطية</h3><p>احفظ ملفات الجرد وسجلات المطابقة والطلبية الحالية بملف واحد. تگدر تسترجعه إذا غيرت الموبايل.</p><div class="button-line"><button id="backupBtn" class="button primary">تنزيل نسخة احتياطية JSON</button><label for="backupInput" class="button secondary">استعادة نسخة احتياطية</label><input id="backupInput" type="file" accept=".json" hidden /></div></div>
+      <div class="setting-card"><h3>نسخة احتياطية</h3><p>احفظ الجرد وسجلات المطابقة والطلبية الحالية وقوائم الطلبات المحفوظة بملف واحد. تگدر تسترجعه إذا غيرت الموبايل.</p><div class="button-line"><button id="backupBtn" class="button primary">تنزيل نسخة احتياطية JSON</button><label for="backupInput" class="button secondary">استعادة نسخة احتياطية</label><input id="backupInput" type="file" accept=".json" hidden /></div></div>
       <div class="setting-card caution"><h3>خصوصية بيانات الشركة</h3><p>لا ترفع ملف الجرد الخاص داخل مجلد التطبيق المنشور على الإنترنت. انشر ملفات البرنامج فقط، وخلي ملف الجرد الخاص على جهازك واستورده من داخل التطبيق.</p></div>
     </section>
 
   </main>
-  <nav class="mobile-nav"><button class="active" data-tab="inventory">المخزون</button><button data-tab="orders">الطلبية</button><button data-tab="changes">المقارنة</button><button data-tab="audit">الجرد</button><button data-tab="settings">الملفات</button></nav>
+  <nav class="mobile-nav"><button class="active" data-tab="inventory">المخزون</button><button data-tab="orders">🛒 القوائم</button><button data-tab="changes">المقارنة</button><button data-tab="audit">الجرد</button><button data-tab="settings">الملفات</button></nav>
   <dialog id="auditDialog"><form id="auditForm" method="dialog" class="dialog-form"><div class="dialog-heading"><h3>مطابقة جرد يدوي</h3><button type="button" id="closeDialog" class="plain-x">×</button></div><p id="auditProductName"></p><p>رصيد البرنامج: <strong id="auditExpected"></strong></p><label>العدد الفعلي بالمخزن<input type="number" id="auditActual" step="any" required inputmode="decimal" /></label><label>ملاحظة (اختياري)<textarea id="auditNote" placeholder="مثلاً: بعد الجرد المسائي"></textarea></label><button class="button primary" type="submit">حفظ المطابقة</button></form></dialog>
   <dialog id="orderDialog"><form id="orderItemForm" class="dialog-form"><div class="dialog-heading"><h3 id="orderDialogTitle">إضافة مادة للطلبية</h3><button type="button" id="closeOrderDialog" class="plain-x">×</button></div><label>اسم المادة<input type="text" id="orderItemName" maxlength="250" required /></label><p class="muted" id="orderCurrentStock"></p><label>الكمية المطلوبة<input id="orderItemQty" type="number" min="0.001" step="any" inputmode="decimal" value="1" required /></label><label>ملاحظة للمادة (اختياري)<input id="orderItemNote" maxlength="220" type="text" placeholder="مثلاً: مقاس معين" /></label><button class="button primary" type="submit" id="saveOrderItem">إضافة للطلبية</button></form></dialog>
-  <script src="app.js?v=2" defer></script>
+  <script src="app.js?v=3" defer></script>
 </body></html>

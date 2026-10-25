@@ -2,7 +2,7 @@
 /* Sama Allubab stock control — all company data stays on the device. */
 const $ = id => document.getElementById(id);
 const nf = new Intl.NumberFormat('en-US',{maximumFractionDigits:3});
-const state = {snapshots:[],audits:[],groups:[],groupMap:new Map(),deltaMap:new Map(),deltas:[],pageSize:80,shown:80,activeTab:'inventory',activeAuditName:null,low:10,orderItems:[],orderCustomer:'',orderGeneralNote:'',editingOrderId:null,orderSelectedKey:null};
+const state = {snapshots:[],audits:[],groups:[],groupMap:new Map(),deltaMap:new Map(),deltas:[],pageSize:80,shown:80,activeTab:'inventory',activeAuditName:null,low:10,orderItems:[],orderCustomer:'',orderGeneralNote:'',savedOrders:[],editingOrderId:null,orderSelectedKey:null};
 const dbName = 'SamaAllubabPrivateInventoryV1';
 let dbPromise;
 function db(){
@@ -14,7 +14,7 @@ function db(){
   return dbPromise;
 }
 async function storageRead(){const d=await db();return new Promise((res,rej)=>{const q=d.transaction('data','readonly').objectStore('data').get('inventory');q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}
-async function storageWrite(){const d=await db();const data={snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderGeneralNote:state.orderGeneralNote};return new Promise((res,rej)=>{const tx=d.transaction('data','readwrite');tx.objectStore('data').put(data,'inventory');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function storageWrite(){const d=await db();const data={snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderGeneralNote:state.orderGeneralNote,savedOrders:state.savedOrders};return new Promise((res,rej)=>{const tx=d.transaction('data','readwrite');tx.objectStore('data').put(data,'inventory');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
 function cleanName(v){return String(v||'').trim().replace(/\s+/g,' ')}
 function nameKey(v){return cleanName(v).toLocaleLowerCase()}
 function parseNumber(v){if(typeof v==='number')return v;const n=Number(String(v??0).replace(/,/g,'').trim());return Number.isFinite(n)?n:0}
@@ -51,7 +51,7 @@ function refresh(){
   $('statOut').textContent=latest?fmtn(state.groups.filter(g=>g.quantity===0).length):'—';
   $('statNegative').textContent=latest?fmtn(state.groups.filter(g=>g.quantity<0).length):'—';
   $('uniqueCount').textContent=fmtn(state.groups.length)+' صنف';
-  renderInventory();renderChanges();renderAudits();renderSnapshots();renderOrder();renderOrderSuggestions();
+  renderInventory();renderChanges();renderAudits();renderSnapshots();renderOrder();renderOrderSuggestions();renderSavedOrders();
 }
 function productCard(g){const klass=g.quantity<0?'red':g.quantity===0?'orange':'';const details=g.count>1?g.count+' أسطر بنفس الاسم':`تسلسل ${g.lines[0].line}`;return `<article class="product-card"><div><div class="product-title">${esc(g.name)}</div><div class="product-sub">${esc(details)}</div></div><div><span class="quantity ${klass}">${fmtn(g.quantity)}</span><span class="qtylabel">الكمية</span></div><div class="product-actions"><span class="subtle">${g.quantity<0?'رصيد سالب — راجع الإدخالات':g.quantity===0?'غير متوفر':g.quantity<=state.low?'كمية قليلة':'في المخزن'}</span><span class="stock-actions"><button class="smallbtn order-add" data-key="${esc(g.key)}">+ للطلبية</button><button class="smallbtn audit-open" data-key="${esc(g.key)}">جرد فعلي</button></span></div></article>`}
 function renderInventory(){
@@ -72,15 +72,46 @@ function renderInventory(){
   $('loadMore').textContent=`عرض المزيد (${fmtn(found.length-visible.length)} باقي)`;
 }
 /* Purchase/fulfillment order: draft is stored locally, independent from stock amounts. */
-function currentOrderText(){
-  const stamp=new Date().toLocaleString('ar-IQ',{dateStyle:'short',timeStyle:'short'});
+function currentOrderText(order=null){
+  const items=order?.items||state.orderItems;
+  const customer=String(order?.customer??state.orderCustomer);
+  const note=String(order?.note??state.orderGeneralNote);
+  const stamp=new Date(order?.savedAt||Date.now()).toLocaleString('ar-IQ',{dateStyle:'short',timeStyle:'short'});
   const lines=['*طلبية تجهيز - سما اللباب*'];
-  if(state.orderCustomer.trim())lines.push('الزبون/الجهة: '+state.orderCustomer.trim());
+  if(customer.trim())lines.push('الزبون/الجهة: '+customer.trim());
   lines.push('التاريخ: '+stamp,'');
-  state.orderItems.forEach((item,i)=>{lines.push((i+1)+'. '+item.name+' — الكمية: '+fmtn(item.quantity));if(item.note)lines.push('   ملاحظة: '+item.note)});
-  if(state.orderGeneralNote.trim())lines.push('','ملاحظات عامة: '+state.orderGeneralNote.trim());
+  items.forEach((item,i)=>{lines.push((i+1)+'. '+item.name+' — الكمية: '+fmtn(item.quantity));if(item.note)lines.push('   ملاحظة: '+item.note)});
+  if(note.trim())lines.push('','ملاحظات عامة: '+note.trim());
   lines.push('','يرجى تأكيد التجهيز.');
   return lines.join('\n');
+}
+function renderSavedOrders(){
+  const items=state.savedOrders;
+  $('savedOrdersCount').textContent=fmtn(items.length)+' قائمة';
+  $('savedOrdersList').innerHTML=items.length?items.map(o=>`<div class="saved-order-item" data-saved-id="${esc(o.id)}"><div class="save-title">${esc(o.customer||'طلبية بدون اسم')}</div><div class="saved-meta">${fmtn(o.items.length)} مادة • ${new Date(o.savedAt).toLocaleString('ar-IQ')}</div><div class="saved-actions"><button class="smallbtn open-saved" type="button" data-saved-id="${esc(o.id)}">فتح وتعديل</button><button class="smallbtn send-saved" type="button" data-saved-id="${esc(o.id)}">إرسال للواتساب</button><button class="smallbtn delete-saved" type="button" data-saved-id="${esc(o.id)}">حذف</button></div></div>`).join(''):'<div class="empty">ما عندك قوائم محفوظة بعد. أضف مواد وبعدين اضغط «حفظ ضمن القوائم».</div>';
+}
+async function saveCurrentOrder(){
+  if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
+  const item={id:'saved-'+Date.now()+'-'+Math.random().toString(36).slice(2),savedAt:new Date().toISOString(),customer:state.orderCustomer.trim(),note:state.orderGeneralNote.trim(),items:state.orderItems.map(i=>({...i}))};
+  state.savedOrders.unshift(item);
+  await saveOrderDraft();renderSavedOrders();alertBox('انحفظت الطلبية بالقوائم. تگدر تفتحها وترسلها للواتساب بأي وقت.');
+}
+async function savedOrderAction(e){
+  const action=e.target.closest('button[data-saved-id]');if(!action)return;
+  const saved=state.savedOrders.find(i=>i.id===action.dataset.savedId);if(!saved)return;
+  if(action.classList.contains('send-saved')){
+    window.location.assign('https://wa.me/?text='+encodeURIComponent(currentOrderText(saved)));return;
+  }
+  if(action.classList.contains('delete-saved')){
+    if(!confirm('متأكد تريد تحذف هذي الطلبية من القوائم؟'))return;
+    state.savedOrders=state.savedOrders.filter(i=>i.id!==saved.id);await saveOrderDraft();renderSavedOrders();return;
+  }
+  if(action.classList.contains('open-saved')){
+    if(state.orderItems.length&&!confirm('تفتح القائمة المحفوظة وتستبدل مسودة الطلبية الحالية؟'))return;
+    state.orderItems=saved.items.map(i=>({...i}));state.orderCustomer=saved.customer||'';state.orderGeneralNote=saved.note||'';
+    $('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote;
+    await saveOrderDraft();renderOrder();tabChange('orders');
+  }
 }
 function renderOrder(){
   const items=state.orderItems;
@@ -89,7 +120,7 @@ function renderOrder(){
   $('orderUnitCount').textContent=fmtn(items.reduce((s,i)=>s+i.quantity,0))+' قطعة';
   $('orderItems').innerHTML=items.length?items.map(item=>`<article class="product-card order-line" data-order-id="${esc(item.id)}"><div><div class="product-title">${esc(item.name)}</div>${item.note?`<div class="product-sub">${esc(item.note)}</div>`:''}</div><div class="order-line-actions"><span class="qty">× ${fmtn(item.quantity)}</span><button type="button" class="smallbtn order-edit" data-order-id="${esc(item.id)}">تعديل</button><button type="button" class="smallbtn order-remove" data-order-id="${esc(item.id)}">حذف</button></div></article>`).join(''):'<div class="empty">الطلبية فارغة. ابحث عن مادة واضغط «إضافة»، أو اضغط «+ للطلبية» من المخزون.</div>';
   $('orderMessagePreview').textContent=items.length?currentOrderText():'أضف مادة حتى تتكوّن رسالة الطلبية.';
-  $('shareOrder').disabled=!items.length;$('copyOrder').disabled=!items.length;
+  $('shareOrder').disabled=!items.length;$('copyOrder').disabled=!items.length;$('saveOrder').disabled=!items.length;
 }
 function renderOrderSuggestions(){
   const q=nameKey($('orderSearch').value);
@@ -230,6 +261,7 @@ async function importFromFile(file,backupOnly=false){if(!file)return;try{
    if(Array.isArray(content.orderItems))state.orderItems=content.orderItems.filter(x=>x&&typeof x.name==='string'&&Number.isFinite(x.quantity)&&x.quantity>0).slice(0,500);
    if(typeof content.orderCustomer==='string')state.orderCustomer=content.orderCustomer.slice(0,90);
    if(typeof content.orderGeneralNote==='string')state.orderGeneralNote=content.orderGeneralNote.slice(0,350);
+   if(Array.isArray(content.savedOrders))state.savedOrders=content.savedOrders.filter(x=>x&&typeof x.id==='string'&&Array.isArray(x.items)&&typeof x.savedAt==='string').slice(0,500);
    $('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote;
    await storageWrite();refresh();alertBox(`تم استعادة ${state.snapshots.length} ملف جرد و${state.audits.length} سجل مطابقة.`);return;
   }
@@ -256,6 +288,9 @@ function setup(){
  $('orderCustomer').addEventListener('input',e=>{state.orderCustomer=e.target.value;saveOrderDraft();renderOrder()});
  $('orderGeneralNote').addEventListener('input',e=>{state.orderGeneralNote=e.target.value;saveOrderDraft();renderOrder()});
  $('shareOrder').addEventListener('click',sendToWhatsApp);
+ $('saveOrder').addEventListener('click',saveCurrentOrder);
+ $('savedOrdersList').addEventListener('click',savedOrderAction);
+ $('goToOrders').addEventListener('click',()=>tabChange('orders'));
  $('copyOrder').addEventListener('click',copyOrder);
  $('clearOrder').addEventListener('click',async ()=>{if(!state.orderItems.length&&!state.orderCustomer.trim()&&!state.orderGeneralNote.trim())return;if(!confirm('تمسح الطلبية الحالية وتبدأ طلبية جديدة؟'))return;state.orderItems=[];state.orderCustomer='';state.orderGeneralNote='';$('orderCustomer').value='';$('orderGeneralNote').value='';await saveOrderDraft();renderOrder();alertBox('تم تفريغ الطلبية. تگدر تبدأ طلبية جديدة.')});
  $('closeDialog').addEventListener('click',()=>$('auditDialog').close());
@@ -267,9 +302,9 @@ function setup(){
  });
  $('exportChanges').addEventListener('click',()=>{if(!state.snapshots[1])return alertBox('لا توجد مقارنة بعد.','error');downloadCSV(state.deltas.map(d=>[d.name,d.before,d.after,d.delta,d.kind]),['المادة','السابق','الحالي','الفرق','نوع التغيير'],'sama-stock-differences.csv')});
  $('exportAudit').addEventListener('click',()=>{const items=auditData();if(!items.length)return alertBox('ماكو مطابقات محفوظة بعد.','error');downloadCSV(items.map(a=>[a.name,a.expected,a.actual,a.delta,a.note,a.at]),['المادة','رصيد البرنامج','الفعلي','الفرق','ملاحظة','الوقت'],'sama-stock-physical-count.csv')});
- $('backupBtn').addEventListener('click',()=>{if(!state.snapshots.length)return alertBox('ماكو بيانات لنسخها.','error');downloadBlob(JSON.stringify({kind:'sama-allubab-backup',schemaVersion:1,exported:new Date().toISOString(),snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderGeneralNote:state.orderGeneralNote}),`sama-inventory-backup-${new Date().toISOString().slice(0,10)}.json`,'application/json;charset=utf-8')});
- $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) استورد ملف mat.xls من الأعلى. 2) شوف المواد والتنبيهات. 3) ارفع ملف جديد بالأسبوع المقبل للمقارنة. 4) من «الطلبية» ابحث عن المواد وحدد الكميات واضغط «إرسال للواتساب» واختر الكروب. 5) احفظ نسخة احتياطية كل فترة.')});
+ $('backupBtn').addEventListener('click',()=>{if(!state.snapshots.length)return alertBox('ماكو بيانات لنسخها.','error');downloadBlob(JSON.stringify({kind:'sama-allubab-backup',schemaVersion:1,exported:new Date().toISOString(),snapshots:state.snapshots,audits:state.audits,orderItems:state.orderItems,orderCustomer:state.orderCustomer,orderGeneralNote:state.orderGeneralNote,savedOrders:state.savedOrders}),`sama-inventory-backup-${new Date().toISOString().slice(0,10)}.json`,'application/json;charset=utf-8')});
+ $('btnHelp').addEventListener('click',()=>{tabChange('settings');alertBox('1) استورد ملف mat.xls من الأعلى. 2) شوف المواد والتنبيهات. 3) ارفع ملف جديد بالأسبوع المقبل للمقارنة. 4) من «قوائم الطلبيات» ابحث عن المواد وحدد الكميات واضغط «إرسال للواتساب» واختر الكروب. 5) احفظ نسخة احتياطية كل فترة.')});
 }
-async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[];state.orderItems=Array.isArray(saved.orderItems)?saved.orderItems:[];state.orderCustomer=typeof saved.orderCustomer==='string'?saved.orderCustomer:'';state.orderGeneralNote=typeof saved.orderGeneralNote==='string'?saved.orderGeneralNote:'';$('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
- refresh();if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(e=>console.log(e));}
+async function main(){setup();try{const saved=await storageRead();if(saved){state.snapshots=Array.isArray(saved.snapshots)?saved.snapshots:[];state.audits=Array.isArray(saved.audits)?saved.audits:[];state.orderItems=Array.isArray(saved.orderItems)?saved.orderItems:[];state.orderCustomer=typeof saved.orderCustomer==='string'?saved.orderCustomer:'';state.orderGeneralNote=typeof saved.orderGeneralNote==='string'?saved.orderGeneralNote:'';state.savedOrders=Array.isArray(saved.savedOrders)?saved.savedOrders:[];$('orderCustomer').value=state.orderCustomer;$('orderGeneralNote').value=state.orderGeneralNote}}catch(err){console.warn('IndexedDB unavailable',err);alertBox('تعذّر فتح مساحة التخزين على هذا الجهاز. استخدم Safari وتأكد من عدم تشغيل التصفح الخاص.','error')}
+ refresh();if(location.hash==='#orders'||new URLSearchParams(location.search).get('page')==='orders')tabChange('orders');if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(e=>console.log(e));}
 document.addEventListener('DOMContentLoaded',main);
