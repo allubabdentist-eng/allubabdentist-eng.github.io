@@ -1,6 +1,6 @@
 'use strict';
 /* Remote inventory sync: decrypt only in the browser, preserve local orders & audits. */
-const SAMA_SYNC={name:'seed-20261025.json',remember:'sama_allubab_debt_unlock_web_v1',aad:'sama-allubab-inventory-v1'};
+const SAMA_SYNC={name:'stock-latest.json',remember:'sama_allubab_debt_unlock_web_v1',aad:'sama-allubab-inventory-v1'};
 const _samaBytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function _samaGzip(x){const stream=new Blob([x]).stream().pipeThrough(new DecompressionStream('gzip'));return new Uint8Array(await new Response(stream).arrayBuffer())}
 async function _samaCloud(pass){
@@ -56,3 +56,6 @@ async function syncStockRemote(interactive=false){
   return false;
  }finally{btn.disabled=false;}
 }
+
+// Check fresh inventory whenever the installed app is brought to the foreground.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncStockRemote(false)});
