@@ -237,6 +237,7 @@ function updateOrderStockPreview(){
 }
 async function saveOrderDraft(){try{await storageWrite()}catch(err){console.warn('Order storage error',err);alertBox('تعذر حفظ الطلبية على هذا الجهاز. تگدر تنسخها احتياطياً.','error')}}
 async function storeOrderItem(){
+  const wasEditing=Boolean(state.editingOrderId);
   const name=cleanName($('orderItemName').value),qty=Number($('orderItemQty').value),note=$('orderItemNote').value.trim();
   if(!name)return alertBox('اكتب اسم المادة.','error');
   if(!Number.isFinite(qty)||qty<=0||!$('orderItemQty').value)return alertBox('الكمية لازم أكبر من صفر.','error');
@@ -247,7 +248,11 @@ async function storeOrderItem(){
   else state.orderItems.push({id:'order-'+Date.now()+'-'+Math.random().toString(36).slice(2),key:matchKey,name,quantity:qty,note});
   $('orderDialog').close();await saveOrderDraft();renderOrder();
   $('orderSearch').value='';renderOrderSuggestions();
-  tabChange('orders');
+  if(state.activeTab!=='orders')tabChange('orders',false);
+  // Keep the next-item search visible instead of jumping to the page top.
+  if(!wasEditing)requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    $('orderSearch').scrollIntoView({block:'center',behavior:'auto'});
+  }));
 }
 async function sendToWhatsApp(){
   if(!state.orderItems.length)return alertBox('أضف مادة للطلبية أولاً.','error');
@@ -277,7 +282,7 @@ function renderAudits(){const rows=auditData(),mismatches=rows.filter(a=>a.delta
  $('auditList').innerHTML=rows.length?rows.map(a=>`<article class="product-card"><div><div class="product-title">${esc(a.name)}</div><div class="product-sub">الرصيد: ${fmtn(a.expected)} | الفعلي: ${fmtn(a.actual)} | ${new Date(a.at).toLocaleString('ar-IQ')} ${a.note?' | '+esc(a.note):''}</div></div><div><strong class="quantity ${a.delta<0?'red':''}" style="color:${a.delta>0?'#178269':''}">${a.delta>0?'+':''}${fmtn(a.delta)}</strong><span class="qtylabel">فرق الجرد</span></div></article>`).join(''):'<div class="empty">لم يتم تسجيل مطابقة يدوية بعد.</div>';
 }
 function renderSnapshots(){const sn=state.snapshots;$('snapshotsList').innerHTML=sn.length?sn.map((s,i)=>`<div class="snapshot"><span><strong>${i===0?'الأحدث: ':''}${esc(s.date)}</strong><br/><small>${esc(s.filename)}</small></span><span>${fmtn(s.products.length)} سجل</span></div>`).join(''):'ماكو ملفات محفوظة.'}
-function tabChange(tab){state.activeTab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===tab));window.scrollTo({top:0,behavior:'smooth'})}
+function tabChange(tab,resetScroll=true){state.activeTab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===tab));if(resetScroll)window.scrollTo({top:0,behavior:'smooth'})}
 function openAudit(key){const g=state.groupMap.get(key);if(!g)return;state.activeAuditName=key;$('auditProductName').textContent=g.name;$('auditExpected').textContent=fmtn(g.quantity);$('auditActual').value='';$('auditNote').value='';$('auditDialog').showModal()}
 function filename(s){return String(s||'file').replace(/[^a-zA-Z0-9\-_.]/g,'_')}
 function downloadBlob(content,name,type){const obj=new Blob([content],{type});const url=URL.createObjectURL(obj),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
@@ -424,7 +429,7 @@ function setupAppUpdate(){
  navigator.serviceWorker.addEventListener('controllerchange',()=>{
   if(!hadController||reloading||document.visibilityState==='hidden')return;
   if(document.querySelector('dialog[open]')||document.activeElement?.matches('input,textarea,select'))return;
-  try{if(sessionStorage.getItem('sama-stock-reloaded-v14'))return;sessionStorage.setItem('sama-stock-reloaded-v14','1')}catch(e){}
+  try{if(sessionStorage.getItem('sama-stock-reloaded-v15'))return;sessionStorage.setItem('sama-stock-reloaded-v15','1')}catch(e){}
   reloading=true;location.reload();
  });
  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(e=>console.warn('App update check:',e));
