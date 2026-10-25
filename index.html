@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="16">
+<html lang="ar" dir="rtl" data-app-version="17">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -26,6 +26,15 @@
 .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap} .toolbtn{background:#10282a;color:#d9e7e8;border:1px solid #21494b;border-radius:10px;padding:9px 11px;font-size:13px}
 .lock{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px} .lockbox{width:min(440px,100%);background:#0d1c1e;border:1px solid #21494b;border-radius:18px;padding:22px} .lockbox h2{color:#42E6E1;margin:0 0 8px} .lockbox p{color:#b8c6c8;line-height:1.6} .pass{width:100%;padding:14px;border-radius:12px;border:1px solid #21494b;background:#071113;color:#fff;font-size:18px;direction:ltr;text-align:left} .unlock{width:100%;margin-top:10px;padding:13px;border:0;border-radius:12px;background:#42E6E1;color:#061516;font-weight:800;font-size:16px} .remember{display:flex;align-items:center;gap:8px;color:#b8c6c8;margin-top:12px;font-size:14px} .err{color:#ff9e9e;min-height:22px;margin-top:8px} .hidden{display:none!important}
 .loading{color:#9fb2b4;text-align:center;padding:24px} .flag{display:inline-block;border-radius:7px;padding:3px 6px;font-size:11px;background:#233739;color:#e3f3f3;white-space:nowrap} .flag.jag{background:#59422a;color:#ffd6a0} .flag.credit{background:#4a3434;color:#ffcccc} .flag.supplier{background:#253d55;color:#b7dbff} .flag.review{background:#4b3d23;color:#ffdc95} .wa.copy{background:#b2d2d2;color:#082526} .wa.disabled{background:#223538;color:#adbfc1;display:flex;align-items:center;justify-content:center;cursor:default} .toolbtn.active{border-color:#42e6e1;color:#42e6e1}
+
+.payment-help{background:#10272a;border:1px solid #24555a;border-radius:12px;padding:12px;color:#bfe7e5;font-size:13px;line-height:1.7;margin-bottom:12px}
+.card.late,.card.late.sent{border:2px solid #f06470;opacity:1}
+.flag.lateflag{background:#922a3a;color:white;font-weight:800}
+.latepill{background:#3b1c25;color:#ffc4cc;border-color:#8d343f}
+.payrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.paybtn{background:#19373c;border:1px solid #386d72;border-radius:9px;color:#c8fffa;font-size:12px;padding:8px 11px}
+.paydate{font-size:12px;color:#adc8c7}
+.toolbtn.alert-active{background:#3b1c25;border-color:#f06470;color:#ffbec7}
 </style>
 </head>
 <body>
@@ -43,14 +52,15 @@
  <h1>تحصيل ديون سما اللباب</h1>
  <div class="sub">تحديث 24 تشرين الأول: تشمل الأرصدة أربع تسديدات جديدة. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
  <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
+ <div class="payment-help">مراقبة التسديد تبدأ بتاريخ <b>25/10/2026</b>. بعد شهر كامل بدون حركة تسديد، يظهر الحساب المدين بالأحمر (أول يوم <b>25/11/2026</b>). عند تسجيل تسديد تبدأ مهلة شهر جديدة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
  <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الزبائن والمكاتب</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">216,288,070 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 24/10/2026 بعد احتساب سندات قبض 680,000 د.ع • دفعة الضمان محسوبة • الدينار والدولار منفصلين</div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
-  <span class="pill shownpill" id="shownCount">المعروض: 0</span>
+  <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 بدون تسديد شهر: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
  <p id="sentRestoreStatus" aria-live="polite" style="font-size:13px;color:#ffe5a3;line-height:1.7;margin:0 0 12px"></p>
 <div id="counter" class="counter"></div>
  <div id="cards"><div class="loading">جاري تحميل البيانات…</div></div>
@@ -60,8 +70,24 @@
 const AAD=new TextEncoder().encode('sama-allubab-debts-v2-gzip');
 const REMEMBER_KEY='sama_allubab_debt_unlock_web_v1';
 const QUERY_KEY='sama_allubab_debt_query_web_v2';
-let records=[], dataset=null, authDataset=null, receiptDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false, onlyUnsent=false;
+let records=[], dataset=null, authDataset=null, receiptDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false, onlyUnsent=false, onlyLate=false;
 const SENT_RESET_BACKUP_KEY='sama_allubab_debt_sent_pre_reset_backup_v1';
+const PAYMENT_KEY='sama_allubab_debt_payment_dates_v1',PAYMENT_START='2026-10-25';
+function today(){const x=new Date();return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');}
+function dateOK(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split('-').map(Number),x=new Date(y,m-1,d);return x.getFullYear()===y&&x.getMonth()===m-1&&x.getDate()===d;}
+function nextMonth(v){const [y,m,d]=v.split('-').map(Number),x=new Date(y,m,1),max=new Date(x.getFullYear(),x.getMonth()+1,0).getDate();x.setDate(Math.min(d,max));return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');}
+function paymentDates(){return readSentObject(PAYMENT_KEY)||{};}
+function paymentId(r){return stableSentId(r);}
+function lastPaid(r){const p=paymentDates()[paymentId(r)];return p&&dateOK(p.date)?p.date:null;}
+function overdue(r){if(!r.due||r.jaguar)return false;const d=lastPaid(r);return today()>=nextMonth(d&&d>PAYMENT_START?d:PAYMENT_START);}
+function recordPaid(card){
+ const r=records.find(x=>x.id===card.dataset.id);if(!r||r.jaguar||!r.due)return;
+ const entered=prompt('تاريخ حركة التسديد (YYYY-MM-DD):',lastPaid(r)||today());if(entered===null)return;
+ const d=entered.trim();if(!dateOK(d)||d>today()){alert('اكتب تاريخ صحيح مو بالمستقبل بالشكل YYYY-MM-DD');return;}
+ if(!confirm('تأكيد حركة تسديد للحساب '+r.name+' بتاريخ '+d+'؟\\nهذا لا يخصم المبلغ من الرصيد، ويجب تحديث كشف الديون أيضاً.'))return;
+ try{const log=paymentDates();log[paymentId(r)]={date:d,recordedAt:new Date().toISOString()};localStorage.setItem(PAYMENT_KEY,JSON.stringify(log));render();showStatus('تأشّر تسديد '+r.name+' بتاريخ '+d+'، بدون تغيير الرصيد.');}catch(e){showStatus('ما كدرنا نخزن حركة التسديد.');}
+}
+
 function b64bytes(s){const b=atob(s);return Uint8Array.from(b,c=>c.charCodeAt(0));}
 async function fetchDataset(){
  const [ar,dr,rr]=await Promise.all([
@@ -249,12 +275,12 @@ function showStatus(message){
 }
 function downloadSentBackup(){
  try{
-  const blob=new Blob([JSON.stringify({kind:'sama-allubab-sent-state',version:'24-10-2026',sent:readSentObject(SENT_STABLE_KEY)||{}},null,2)],{type:'application/json'});
+  const blob=new Blob([JSON.stringify({kind:'sama-allubab-sent-state',version:'25-10-2026',sent:readSentObject(SENT_STABLE_KEY)||{},payment_dates:paymentDates()},null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='sama-allubab-sent-backup.json';
   document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},2000);
-  showStatus('تم إنشاء نسخة احتياطية لعلامات الإرسال. احتفظ بالملف في Files.');
+  showStatus('تم حفظ علامات الإرسال وتواريخ التسديد. احتفظ بالملف في Files.');
  }catch(e){showStatus('تعذّر حفظ النسخة الاحتياطية. افتح التطبيق في Safari وحاول مجدداً.');}
 }
 function importSentBackup(input){
@@ -265,8 +291,17 @@ function importSentBackup(input){
    const data=JSON.parse(String(reader.result));
    if(!data||typeof data!=='object'||!data.sent||typeof data.sent!=='object')throw new Error('invalid');
    const result=mergeOldSentMap(data.sent);
+   let restored=0;
+   if(data.payment_dates&&typeof data.payment_dates==='object'&&!Array.isArray(data.payment_dates)){
+    const known=new Set(records.map(paymentId)),log=paymentDates();
+    for(const [key,v] of Object.entries(data.payment_dates)){
+     if(!known.has(key)||!v||!dateOK(v.date)||v.date>today())continue;
+     if(!log[key]||String(log[key].date||'')<v.date){log[key]=v;restored++;}
+    }
+    localStorage.setItem(PAYMENT_KEY,JSON.stringify(log));
+   }
    render();
-   showStatus(result.recognized?'استرجعنا '+result.recognized+' حساب معروف، منها '+result.added+' علامة جديدة.': 'ملف النسخة انفتح لكن ماكو حسابات تطابق الكشف الحالي.');
+   showStatus('استرجعنا '+result.recognized+' حالة إرسال و'+restored+' تاريخ تسديد.');
   }catch(e){showStatus('هذا الملف مو نسخة صحيحة لعلامات الإرسال.');}
   input.value='';
  };
@@ -295,11 +330,13 @@ function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function render(){
  const state=getState(),box=document.getElementById('cards');
  box.innerHTML=records.map((r,i)=>{
-  const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'');
+  const late=overdue(r),last=(!r.jaguar&&r.due)?lastPaid(r):null;
+  const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 ماكو تسديد من شهر</span>':'');
   const action=r.wa_phone?'<a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a>':(r.message?'<button class="wa copy" type="button" data-copy="'+esc(r.id)+'">نسخ المسج</button>':'<span class="wa disabled">لا توجد مطالبة</span>');
-  return '<div class="card '+(state[r.id]?'sent':'')+'" data-id="'+esc(r.id)+'" data-jaguar="'+(r.jaguar?'1':'0')+'" data-search="'+esc(r.name+' '+r.phone+' '+(r.account||'')+' '+(r.jaguar?'جكوار جكور':'')+' '+(r.category==='supplier'?'مجهز':''))+'"><div class="topline"><span class="num">'+(i+1)+'</span><strong>'+esc(r.name)+'</strong>'+tags+'</div><div class="amount">'+esc(r.amount)+'</div>'+(r.usd?'<div class="usd">'+esc(r.usd)+'</div>':'')+'<div class="phone">'+esc(r.phone||'بدون رقم')+'</div><div class="actions">'+action+'<button class="done" type="button">'+(state[r.id]?'تم':'تم الإرسال')+'</button></div></div>';
+  const track=(!r.jaguar&&r.due)?'<div class="payrow"><button type="button" class="paybtn">تسجيل حركة تسديد</button><span class="paydate">'+(last?'آخر حركة: '+esc(last):'بداية المتابعة: 2026-10-25')+'</span></div>':'';
+  return '<div class="card '+(state[r.id]?'sent ':'')+(late?'late':'')+'" data-id="'+esc(r.id)+'" data-jaguar="'+(r.jaguar?'1':'0')+'" data-late="'+(late?'1':'0')+'" data-search="'+esc(r.name+' '+r.phone+' '+(r.account||'')+' '+(r.jaguar?'جكوار جكور':'')+' '+(r.category==='supplier'?'مجهز':''))+'"><div class="topline"><span class="num">'+(i+1)+'</span><strong>'+esc(r.name)+'</strong>'+tags+'</div><div class="amount">'+esc(r.amount)+'</div>'+(r.usd?'<div class="usd">'+esc(r.usd)+'</div>':'')+'<div class="phone">'+esc(r.phone||'بدون رقم')+'</div><div class="actions">'+action+'<button class="done" type="button">'+(state[r.id]?'تم':'تم الإرسال')+'</button></div>'+track+'</div>';
  }).join('');
- box.querySelectorAll('.card').forEach(c=>{c.querySelector('.done').addEventListener('click',()=>toggle(c));const a=c.querySelector('a.wa');if(a)a.addEventListener('click',remember);const copy=c.querySelector('button.copy');if(copy)copy.addEventListener('click',()=>copyMessage(copy));});
+ box.querySelectorAll('.card').forEach(c=>{c.querySelector('.done').addEventListener('click',()=>toggle(c));const a=c.querySelector('a.wa');if(a)a.addEventListener('click',remember);const copy=c.querySelector('button.copy');if(copy)copy.addEventListener('click',()=>copyMessage(copy));const p=c.querySelector('.paybtn');if(p)p.addEventListener('click',()=>recordPaid(c));});
  filterCards();
 }
 async function copyMessage(btn){
@@ -308,8 +345,8 @@ async function copyMessage(btn){
  btn.textContent='تم نسخ المسج';
 }
 function toggle(card){const state=getState(),id=card.dataset.id;state[id]=!state[id];if(!state[id])delete state[id];card.classList.toggle('sent',!!state[id]);card.querySelector('.done').textContent=state[id]?'تم':'تم الإرسال';saveState(state);if(onlyUnsent)filterCards();}
-function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
-function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[],state=getState();document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=(!onlyJaguar||c.dataset.jaguar==='1')&&(!onlyUnsent||!state[c.dataset.id])&&parts.every(p=>h.includes(p))?'':'none';});try{localStorage.setItem(QUERY_KEY,document.getElementById('q').value);}catch(e){}updateCounts();}
+function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('lateCount').textContent='🔴 بدون تسديد شهر: '+cards.filter(c=>c.dataset.late==='1').length;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
+function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[],state=getState();document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=(!onlyJaguar||c.dataset.jaguar==='1')&&(!onlyUnsent||!state[c.dataset.id])&&(!onlyLate||c.dataset.late==='1')&&parts.every(p=>h.includes(p))?'':'none';});try{localStorage.setItem(QUERY_KEY,document.getElementById('q').value);}catch(e){}updateCounts();}
 function remember(){if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));localStorage.setItem(QUERY_KEY,document.getElementById('q').value||'');}
 async function unlock(pass,rememberPass){
  const err=document.getElementById('err');err.textContent='';
@@ -324,7 +361,9 @@ async function unlock(pass,rememberPass){
 document.getElementById('unlockBtn').addEventListener('click',()=>unlock(document.getElementById('pass').value,document.getElementById('remember').checked));
 document.getElementById('pass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('unlockBtn').click();});
 document.getElementById('q').addEventListener('input',filterCards);
-document.getElementById('jagBtn').addEventListener('click',()=>{onlyJaguar=!onlyJaguar;document.getElementById('jagBtn').classList.toggle('active',onlyJaguar);filterCards();});
+document.getElementById('jagBtn').addEventListener('click',()=>{onlyJaguar=!onlyJaguar;if(onlyJaguar){onlyLate=false;document.getElementById('lateBtn').classList.remove('alert-active');}document.getElementById('jagBtn').classList.toggle('active',onlyJaguar);filterCards();});
+document.getElementById('lateBtn').addEventListener('click',()=>{onlyLate=!onlyLate;if(onlyLate){onlyJaguar=false;document.getElementById('jagBtn').classList.remove('active');}document.getElementById('lateBtn').classList.toggle('alert-active',onlyLate);filterCards();});
+addEventListener('pageshow',()=>{if(records.length)render();});
 document.getElementById('restoreSent').addEventListener('click',async()=>{
  if(!confirm('علامات النسخ القديمة ممكن تكون غير دقيقة. متأكد تريد استرجاعها وإضافتها للحالات الحالية؟'))return;
  showStatus('جاري فحص سجلات النسخ السابقة…');
