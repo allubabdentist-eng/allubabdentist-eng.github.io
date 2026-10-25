@@ -11,11 +11,11 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=9" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 8</small></span></div>
+    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 9</small></span></div>
     <button id="btnHelp" class="header-btn" title="طريقة الاستخدام">؟</button>
   </header>
 
@@ -74,6 +74,7 @@
         <button id="finishOrder" class="button fulfilled" type="button">✓ تم التجهيز — تصفير الطلبية</button>
         <button id="clearOrder" class="button ghost" type="button">تفريغ طلبية غير مجهّزة</button>
       </div>
+      <div id="orderResetNotice" class="stock-info" hidden role="status">✅ تصفرت الطلبية بالكامل، بما فيها اسم الزبون ورقمه وعنوانه وملاحظاته والمواد. تگدر تبدأ طلبية جديدة، والجرد والقوائم المحفوظة ما تغيرت.</div>
       <div id="fulfillmentCheck" class="fulfillment-check" hidden role="status">
         <strong>رجعت من واتساب؟ هل أرسلت الطلبية وتم تجهيزها؟</strong>
         <p>إذا تجهزت اضغط «تم التجهيز» حتى تنمسح بيانات الزبون والمواد من الطلبية الحالية. إذا بعد ما تجهزت، نخليها محفوظة.</p>
@@ -111,5 +112,5 @@
   <nav class="mobile-nav"><button class="active" data-tab="inventory">المخزون</button><button data-tab="orders">🛒 القوائم</button><button data-tab="changes">المقارنة</button><button data-tab="audit">الجرد</button><button data-tab="settings">الملفات</button></nav>
   <dialog id="auditDialog"><form id="auditForm" method="dialog" class="dialog-form"><div class="dialog-heading"><h3>مطابقة جرد يدوي</h3><button type="button" id="closeDialog" class="plain-x">×</button></div><p id="auditProductName"></p><p>رصيد البرنامج: <strong id="auditExpected"></strong></p><label>العدد الفعلي بالمخزن<input type="number" id="auditActual" step="any" required inputmode="decimal" /></label><label>ملاحظة (اختياري)<textarea id="auditNote" placeholder="مثلاً: بعد الجرد المسائي"></textarea></label><button class="button primary" type="submit">حفظ المطابقة</button></form></dialog>
   <dialog id="orderDialog"><form id="orderItemForm" class="dialog-form"><div class="dialog-heading"><h3 id="orderDialogTitle">إضافة مادة للطلبية</h3><button type="button" id="closeOrderDialog" class="plain-x">×</button></div><label>اسم المادة<input type="text" id="orderItemName" maxlength="250" required /></label><p class="muted" id="orderCurrentStock"></p><label>الكمية المطلوبة<input id="orderItemQty" type="number" min="0.001" step="any" inputmode="decimal" value="1" required /></label><label>ملاحظة للمادة (اختياري)<input id="orderItemNote" maxlength="220" type="text" placeholder="مثلاً: مقاس معين" /></label><button class="button primary" type="submit" id="saveOrderItem">إضافة للطلبية</button></form></dialog>
-  <script src="app.js?v=8" defer></script>
+  <script src="app.js?v=9" defer></script>
 </body></html>
