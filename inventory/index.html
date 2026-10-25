@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#075d68" />
+  <meta name="description" content="مراقبة مخزون سما اللباب — محلي على جهازك" />
+  <title>مخزون سما اللباب</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>نظام متابعة المخزون</small></span></div>
+    <button id="btnHelp" class="header-btn" title="طريقة الاستخدام">؟</button>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div><span class="eyebrow">SAMA ALLUBAB / STOCK CONTROL</span><h1>مخزون المكتب</h1><p id="currentDateLabel">ارفع الجرد المعتمد حتى نعرض حالة المواد</p></div>
+      <div class="hero-action"><label class="main-upload" for="fileInput"><span>＋</span> تحديث الجرد</label><input id="fileInput" type="file" accept=".xls,.json,application/json,application/vnd.ms-excel" hidden/><small>يدعم تصدير المربّع بصيغة XLS وملف JSON</small></div>
+    </section>
+
+    <div class="privacy-line"><span>🔒</span> البيانات تُقرأ وتُحفظ على هذا الجهاز فقط. لا تُرسل إلى موقع أو سيرفر.</div>
+
+    <div id="alert" class="alert" role="status" hidden></div>
+
+    <section class="stats" id="stats">
+      <button class="stat" data-filter="all"><span class="stat-label">عدد سجلات المواد</span><strong id="statLines">—</strong><small>قبل دمج الأسماء المكررة</small></button>
+      <button class="stat" data-filter="available"><span class="stat-label">أصناف متوفرة</span><strong id="statAvailable">—</strong><small>كمية أكبر من صفر</small></button>
+      <button class="stat" data-filter="out"><span class="stat-label">أصناف نافدة</span><strong id="statOut">—</strong><small>كمية صفر</small></button>
+      <button class="stat negative" data-filter="negative"><span class="stat-label">أصناف بكميات سالبة</span><strong id="statNegative">—</strong><small>تحتاج مراجعة</small></button>
+    </section>
+
+    <div class="tabbar" role="tablist">
+      <button class="tab active" data-tab="inventory">المخزون</button>
+      <button class="tab" data-tab="changes">مقارنة الجرد</button>
+      <button class="tab" data-tab="audit">الجرد الفعلي</button>
+      <button class="tab" data-tab="settings">النسخ والملفات</button>
+    </div>
+
+    <section id="inventory" class="tab-panel active">
+      <div class="section-heading"><div><h2>المواد</h2><p>الأسماء المتطابقة تُجمع للبحث، وتبقى جميع الأسطر الأصلية محفوظة.</p></div><div class="pill" id="uniqueCount">0 صنف</div></div>
+      <div class="tools"><label class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="بحث باسم المادة..." autocomplete="off" /></label><select id="filter"><option value="all">جميع المواد</option><option value="available">متوفرة</option><option value="out">نافدة</option><option value="negative">سالبة</option><option value="low">قليلة</option><option value="changed">متغيرة عن الجرد السابق</option></select></div>
+      <div class="small-filter"><label>تنبيه الكمية القليلة عند <input id="lowThreshold" type="number" min="1" max="999999" step="1" value="10" /></label><span id="resultCount"></span></div>
+      <div id="inventoryList" class="product-list"><div class="empty">ابدأ برفع أحدث ملف جرد.</div></div>
+      <div class="pagination"><button id="loadMore" hidden>عرض المزيد</button></div>
+    </section>
+
+    <section id="changes" class="tab-panel">
+      <div class="section-heading"><div><h2>مقارنة أسبوعية</h2><p>نقارن الكميات حسب اسم المادة بين آخر ملفين مرفوعين.</p></div><button class="button secondary" id="exportChanges">تصدير التغييرات CSV</button></div>
+      <div id="changesOverview" class="changes-overview"></div>
+      <div class="tools"><label class="search-wrap"><span>⌕</span><input id="changesSearch" type="search" placeholder="ابحث بالتغييرات..." /></label><select id="changesFilter"><option value="all">كل التغييرات</option><option value="down">الناقص</option><option value="up">الزايد</option><option value="new">الجديد</option><option value="gone">المحذوف</option></select></div>
+      <div id="changesList" class="product-list"><div class="empty">تظهر المقارنة بعد رفع ملف جرد ثاني.</div></div>
+    </section>
+
+    <section id="audit" class="tab-panel">
+      <div class="section-heading"><div><h2>مطابقة الجرد الفعلي</h2><p>اختار مادة من المخزون واضغط «جرد» حتى تسجل العد اليدوي. لا يتغير رصيد الملف المعتمد.</p></div><button id="exportAudit" class="button secondary">تصدير المطابقات CSV</button></div>
+      <div id="auditSummary" class="audit-banner">لا يوجد جرد يدوي مسجل بعد.</div><div id="auditList" class="product-list"></div>
+      <p class="disclaimer">مهم: هذا التقرير يقارن العد اليدوي بكميات البرنامج، لكنه لا يثبت سبب الفرق. لمعرفة النقص الفعلي يجب تسجيل البيع والاستلام والتحويل بشكل منتظم.</p>
+    </section>
+
+    <section id="settings" class="tab-panel">
+      <div class="section-heading"><div><h2>إدارة البيانات</h2><p>نسخة احتياطية ضرورية حتى ما تضيع سجلاتك إذا تبدّل الجهاز أو انحذف التطبيق.</p></div></div>
+      <div class="setting-card"><h3>ملفات الجرد المحفوظة</h3><div id="snapshotsList">ماكو ملفات حالياً.</div></div>
+      <div class="setting-card"><h3>نسخة احتياطية</h3><p>احفظ ملفات الجرد وسجلات المطابقة بملف واحد. تگدر تسترجعه إذا غيرت الموبايل.</p><div class="button-line"><button id="backupBtn" class="button primary">تنزيل نسخة احتياطية JSON</button><label for="backupInput" class="button secondary">استعادة نسخة احتياطية</label><input id="backupInput" type="file" accept=".json" hidden /></div></div>
+      <div class="setting-card caution"><h3>خصوصية بيانات الشركة</h3><p>لا ترفع ملف الجرد الخاص داخل مجلد التطبيق المنشور على الإنترنت. انشر ملفات البرنامج فقط، وخلي ملف الجرد الخاص على جهازك واستورده من داخل التطبيق.</p></div>
+    </section>
+
+  </main>
+  <nav class="mobile-nav"><button class="active" data-tab="inventory">المخزون</button><button data-tab="changes">المقارنة</button><button data-tab="audit">الجرد</button><button data-tab="settings">الملفات</button></nav>
+  <dialog id="auditDialog"><form id="auditForm" method="dialog" class="dialog-form"><div class="dialog-heading"><h3>مطابقة جرد يدوي</h3><button type="button" id="closeDialog" class="plain-x">×</button></div><p id="auditProductName"></p><p>رصيد البرنامج: <strong id="auditExpected"></strong></p><label>العدد الفعلي بالمخزن<input type="number" id="auditActual" step="any" required inputmode="decimal" /></label><label>ملاحظة (اختياري)<textarea id="auditNote" placeholder="مثلاً: بعد الجرد المسائي"></textarea></label><button class="button primary" type="submit">حفظ المطابقة</button></form></dialog>
+  <script src="app.js" defer></script>
+</body></html>
