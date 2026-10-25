@@ -76,7 +76,7 @@
 </section>
 
  <div class="payment-help">مراقبة التسديد تبدأ بتاريخ <b>25/10/2026</b>. بعد شهر كامل بدون حركة تسديد، يظهر الحساب المدين بالأحمر (أول يوم <b>25/11/2026</b>). عند تسجيل تسديد تبدأ مهلة شهر جديدة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
- <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">211,673,570 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 25/10/2026 المعتمد حسب الملفات الجديدة • المبالغ السابقة المسددة محسوبة بالكشف • الدينار والدولار منفصلين</div>
+ <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong id="toUsIqd" style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">211,673,570 د.ع</strong><strong id="toUsUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong id="weOweIqd" style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong id="weOweUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 25/10/2026 المعتمد حسب الملفات الجديدة • المبالغ السابقة المسددة محسوبة بالكشف • الدينار والدولار منفصلين</div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
@@ -142,7 +142,19 @@ function combineRecords(){
  }
  return arr.map(hydrate);
 }
+
+function updateMoneySummary(){
+ let a=0,b=0,d=0,e=0;
+ for(const r of records){const i=Number(r.iqd)||0,u=Number(r.usd)||0;if(i>0)a+=i;else d-=i;if(u>0)b+=u;else e-=u;}
+ const fmt=n=>n.toLocaleString('en-US',{maximumFractionDigits:2});
+ document.getElementById('toUsIqd').textContent=fmt(a)+' د.ع';
+ document.getElementById('toUsUsd').textContent=fmt(b)+' $';
+ document.getElementById('weOweIqd').textContent=fmt(d)+' د.ع';
+ document.getElementById('weOweUsd').textContent=fmt(e)+' $';
+}
+
 function showImportInfo(){
+ updateMoneySummary();
  const part=(kind)=>{const x=manualState?.groups?.[kind];return x?x.rows.length+' حساب، '+importTime(x.at)+' — '+x.file:'كشف الأونلاين';};
  document.getElementById('manualInfo').textContent='الزبائن: '+part('customer')+'\nالمجهزين: '+part('supplier');
  const c=records.filter(r=>r.category==='customer').length,s=records.filter(r=>r.category==='supplier').length;
