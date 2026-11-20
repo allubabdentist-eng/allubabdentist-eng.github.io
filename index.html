@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="23">
+<html lang="ar" dir="rtl" data-app-version="24">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -606,7 +606,11 @@ async function unlock(pass,rememberPass){
   if(rememberPass)localStorage.setItem(REMEMBER_KEY,pass);else localStorage.removeItem(REMEMBER_KEY);
   document.getElementById('lockScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');
   document.getElementById('q').value=localStorage.getItem(QUERY_KEY)||'';render();showImportInfo();if(importWarning)showStatus(importWarning);
-  const y=parseInt(localStorage.getItem(POS_KEY)||'0',10);if(y)setTimeout(()=>scrollTo(0,y),60);
+  if(location.hash==='#whatsapp-setup') openSetup();
+  else {
+   const y=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+   if(y)setTimeout(()=>scrollTo(0,y),60);
+  }
  }catch(e){err.textContent='رمز الدخول غير صحيح أو تعذر تحميل آخر تحديث.';}
 }
 document.getElementById('unlockBtn').addEventListener('click',()=>unlock(document.getElementById('pass').value,document.getElementById('remember').checked));
@@ -920,6 +924,9 @@ shortcutEl('tryShortcut').addEventListener('click',testShortcut);
 shortcutEl('verifyShortcut').addEventListener('click',confirmShortcutTest);
 shortcutEl('sendStatements').addEventListener('click',startStatementHandoff);
 shortcutEl('shortcutSettings').addEventListener('click',openSetup);
+window.addEventListener('hashchange',()=>{
+ if(location.hash==='#whatsapp-setup' && !shortcutEl('app').classList.contains('hidden')) openSetup();
+});
 shortcutEl('reopenShortcut').addEventListener('click',()=>{
  const target=unopenedShortcut;
  if (!target) return;
