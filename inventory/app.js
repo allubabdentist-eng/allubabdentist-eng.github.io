@@ -65,6 +65,7 @@ function buildChanges(){
 }
 function refresh(){
   const latest=state.snapshots[0];state.groupMap=latest?grouped(latest.products):new Map();state.groups=[...state.groupMap.values()].sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  photoOrders.refreshStock();
   buildChanges();
   $('currentDateLabel').textContent=latest?'آخر جرد: '+latest.date+' — '+latest.filename:'ارفع الجرد المعتمد حتى نعرض حالة المواد';
   const raw=latest?.products||[];
@@ -399,6 +400,7 @@ async function importFromFile(file,backupOnly=false){if(!file)return;try{
  }catch(err){console.error(err);alertBox('تعذر استيراد الملف: '+(err?.message||String(err)),'error')}
 }
 function setup(){
+ photoOrders.init();
  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>tabChange(b.dataset.tab)));
  document.querySelectorAll('.stat').forEach(b=>b.addEventListener('click',()=>{$('filter').value=b.dataset.filter;state.shown=80;tabChange('inventory');renderInventory()}));
  $('fileInput').addEventListener('change',async e=>{await importFromFile(e.target.files[0]);e.target.value='' });

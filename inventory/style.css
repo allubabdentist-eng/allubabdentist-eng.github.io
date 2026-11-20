@@ -83,3 +83,12 @@
   .order-fields input,.order-fields textarea,
   .small-filter input,.dialog-form input,.dialog-form textarea { font-size:16px; }
 }
+
+.photo-actions,.photo-row-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.photo-row-head{justify-content:space-between}
+.photo-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+.photo-panel[hidden]{display:none}.photo-panel h3,.photo-panel p{margin:0 0 10px}
+.photo-panel label{display:grid;gap:5px;font-size:14px;font-weight:650;min-width:0}
+.photo-panel input,.photo-panel select,.photo-panel textarea{width:100%;box-sizing:border-box;color:var(--text);background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px;font:inherit;font-size:16px}
+.photo-row{display:grid;gap:9px;padding:12px 0;border-top:1px solid var(--line)}.photo-row small{color:var(--muted);overflow-wrap:anywhere}
+.photo-panel details{margin:12px 0}.photo-panel summary{cursor:pointer;color:var(--teal);margin-bottom:7px}.photo-panel button:disabled{opacity:.5}
+@media(max-width:600px){.order-add-head:has(#photoPick){align-items:flex-start;flex-wrap:wrap}.photo-actions .button{min-height:42px}}

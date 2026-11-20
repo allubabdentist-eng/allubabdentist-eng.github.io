@@ -12,11 +12,11 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=17" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 16</small></span></div>
+    <div class="brand"><span class="logo">S</span><span><strong>سما اللباب</strong><small>مخزون وطلبيات • الإصدار 17</small></span></div>
     <button id="btnHelp" class="header-btn" title="طريقة الاستخدام">؟</button>
   </header>
 
@@ -61,7 +61,17 @@
         <label>عنوان الزبون / التوصيل <textarea id="orderCustomerAddress" maxlength="220" rows="2" placeholder="المحافظة، المنطقة، الشارع، أقرب نقطة دالة" autocomplete="street-address"></textarea></label>
         <label>ملاحظات الطلبية <span class="optional">(اختياري)</span><textarea id="orderGeneralNote" maxlength="350" rows="2" placeholder="مثلاً: التسليم اليوم أو اسم المندوب"></textarea></label>
       </div>
-      <div class="order-add-head"><h3>إضافة مواد للطلبية</h3><button id="addCustomItem" class="button secondary" type="button">+ مادة يدوية</button></div>
+      <div class="order-add-head"><h3>إضافة مواد للطلبية</h3><div class="photo-actions"><button id="photoPick" class="button primary" type="button">مسودة من صورة</button><button id="addCustomItem" class="button secondary" type="button">+ مادة يدوية</button></div></div>
+      <input id="photoFiles" type="file" accept="image/*" multiple hidden>
+      <section id="photoPanel" class="photo-panel" aria-label="مراجعة مواد الصورة" hidden>
+        <div class="photo-row-head"><h3>مراجعة مواد الصورة</h3><button type="button" id="photoCancel" class="smallbtn">إغلاق</button></div>
+        <p id="photoStatus" role="status"></p>
+        <div id="photoRows"></div>
+        <details><summary>تعديل النص المقروء</summary><label>نص الطلب<textarea id="photoText" rows="5" dir="auto"></textarea></label>
+          <button class="smallbtn" id="photoParse" type="button">إعادة المطابقة من النص</button></details>
+        <div class="photo-actions"><button type="button" id="photoAddLine" class="button secondary">إضافة سطر</button>
+          <button type="button" id="photoApply" class="button primary" disabled>إضافة للمسودة</button></div>
+      </section>
       <label class="search-wrap order-search"><span>⌕</span><input id="orderSearch" type="search" placeholder="ابحث عن مادة واضغط إضافة..." autocomplete="off" /></label>
       <div id="orderStockInfo" class="stock-info">جارِ التأكد من تحميل كميات المخزن...</div>
       <div id="orderSuggestions" class="order-suggestions"></div>
@@ -114,5 +124,6 @@
   <dialog id="auditDialog"><form id="auditForm" method="dialog" class="dialog-form"><div class="dialog-heading"><h3>مطابقة جرد يدوي</h3><button type="button" id="closeDialog" class="plain-x">×</button></div><p id="auditProductName"></p><p>رصيد البرنامج: <strong id="auditExpected"></strong></p><label>العدد الفعلي بالمخزن<input type="number" id="auditActual" step="any" required inputmode="decimal" /></label><label>ملاحظة (اختياري)<textarea id="auditNote" placeholder="مثلاً: بعد الجرد المسائي"></textarea></label><button class="button primary" type="submit">حفظ المطابقة</button></form></dialog>
   <dialog id="orderDialog"><form id="orderItemForm" class="dialog-form"><div class="dialog-heading"><h3 id="orderDialogTitle">إضافة مادة للطلبية</h3><button type="button" id="closeOrderDialog" class="plain-x">×</button></div><label>اسم المادة<input type="text" id="orderItemName" maxlength="250" required /></label><p class="muted" id="orderCurrentStock"></p><label>الكمية المطلوبة<input id="orderItemQty" type="number" min="0.001" step="any" inputmode="decimal" value="1" required /></label><label>ملاحظة للمادة (اختياري)<input id="orderItemNote" maxlength="220" type="text" placeholder="مثلاً: مقاس معين" /></label><button class="button primary" type="submit" id="saveOrderItem">إضافة للطلبية</button></form></dialog>
   <script src="sync.js?v=16" defer></script>
-  <script src="app.js?v=16" defer></script>
+  <script src="photo-order.js?v=17" defer></script>
+  <script src="app.js?v=17" defer></script>
 </body></html>
