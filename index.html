@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="22">
+<html lang="ar" dir="rtl" data-app-version="23">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -44,6 +44,13 @@
 .import-actions .primary{background:#42d0ca;color:#052323}
 #manualInfo{margin-top:10px;white-space:pre-line;line-height:1.7;font-size:12px;color:#a4ebe6}
 
+.shortcut-setup label{display:block;margin:.8rem 0 .25rem}
+.shortcut-setup input{font:inherit;width:min(100%,18rem);padding:.6rem;border:1px solid #386d72;border-radius:8px;color:white;background:#071113}
+.shortcut-setup .toolbtn,#shortcutRecovery .toolbtn{font:inherit;margin:.4rem .2rem}
+.shortcut-setup details{margin:1rem 0;line-height:1.7}
+.shortcut-setup summary{cursor:pointer;color:#80e7df}
+.shortcut-setup li{margin:.6rem 0}
+.shortcut-setup bdi{direction:ltr;font-weight:650}
 </style>
 </head>
 <body>
@@ -83,7 +90,33 @@
   <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 بدون تسديد شهر: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button id="refreshDebts" class="toolbtn" type="button">↻ تحديث الديون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="refreshDebts" class="toolbtn" type="button">↻ تحديث الديون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <section id="shortcutSetup" class="debts-import shortcut-setup" hidden aria-labelledby="setupTitle">
+  <strong id="setupTitle">واتساب بزنس على الآيفون</strong>
+  <p>أول مرة، جهّز الاختصار وجرّب الربط على رقمك. بعدها زر «إرسال الديون للجميع» يشغّله مباشرة.</p>
+  <details>
+   <summary>شلون أجهّز الاختصار؟</summary>
+   <p>سمِّ الاختصار <bdi dir="ltr">Allubab Statements</bdi>. رتّب الإجراءات مثل القائمة. الأسماء بالإنكليزي مثل ما تظهر بالآيفون.</p>
+   <ol>
+    <li>أضف <bdi>Get Dictionary from Input</bdi>. اختَر <bdi>Shortcut Input</bdi> كمدخل.</li>
+    <li>أضف <bdi>Get Dictionary Value</bdi>. اضغط <bdi>Value</bdi> وبدّلها إلى <bdi>All Keys</bdi> من القاموس السابق.</li>
+    <li>أضف <bdi>Repeat with Each</bdi> على ناتج <bdi>All Keys</bdi>. كل مفتاح هو رقم زبون واحد.</li>
+    <li>داخل التكرار أضف <bdi>Get Dictionary Value</bdi>. خلي المفتاح <bdi>Repeat Item</bdi> والقاموس هو ناتج أول إجراء <bdi>Dictionary</bdi>. هذا يرجّع نص الرسالة لهذا الرقم.</li>
+    <li>داخل التكرار حطّ <bdi>WA Business → Send Message</bdi>. استبدل <bdi>Test</bdi> بمتغيّر <bdi>Dictionary Value</bdi> من الخطوة السابقة، واستبدل <bdi>Me</bdi> بمتغيّر <bdi>Repeat Item</bdi>. اضغط مطوّلاً على الخانة حتى تختار المتغيّر. خلّي <bdi>Show Compose Sheet</bdi> مطفّي.</li>
+    <li>للانتظار بين الرسائل، أضف <bdi>Wait</bdi> وحدّد ثانيتين قبل <bdi>End Repeat</bdi>.</li>
+   </ol>
+  </details>
+  <label for="shortcutPhone">رقم واتساب الشخصي للتجربة</label>
+  <input id="shortcutPhone" type="tel" inputmode="tel" dir="ltr" placeholder="07… أو +964…" autocomplete="off">
+  <button class="toolbtn" type="button" id="tryShortcut">دز رمز تجربة لرقمي</button>
+  <div id="shortcutVerify" hidden>
+   <label for="shortcutCode">الرمز اللي وصلك برسالة واتساب</label>
+   <input id="shortcutCode" type="text" inputmode="numeric" dir="ltr" maxlength="4" autocomplete="off" placeholder="0000">
+   <button class="toolbtn" type="button" id="verifyShortcut">تأكيد التجربة</button>
+  </div>
+  <p>للتجربة ينفتح الاختصار بنص محلي. للقوائم الكبيرة يستخدم حافظة الآيفون، وقد تتزامن الحافظة ويا أجهزة Apple القريبة إذا مفعّل Handoff.</p>
+ </section>
+ <div id="shortcutRecovery" hidden><button id="reopenShortcut" class="toolbtn" type="button">فتح الاختصار إذا ما انفتح</button></div>
  <p id="sentRestoreStatus" aria-live="polite" style="font-size:13px;color:#ffe5a3;line-height:1.7;margin:0 0 12px"></p>
 <div id="counter" class="counter"></div>
  <div id="cards"><div class="loading">جاري تحميل البيانات…</div></div>
@@ -96,7 +129,7 @@ const QUERY_KEY='sama_allubab_debt_query_web_v2';
 let records=[], dataset=null, authDataset=null, receiptDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false, onlyUnsent=false, onlyLate=false, onlyDollar=false;
 const SENT_RESET_BACKUP_KEY='sama_allubab_debt_sent_pre_reset_backup_v1';
 const PAYMENT_KEY='sama_allubab_debt_payment_dates_v1',PAYMENT_START='2026-10-25';
-let lastDecryptionPassword='',refreshingRemote=false;
+let lastDecryptionPassword='',remoteRefresh=null,activeImports=0;
 function today(){const x=new Date();return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');}
 function dateOK(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split('-').map(Number),x=new Date(y,m-1,d);return x.getFullYear()===y&&x.getMonth()===m-1&&x.getDate()===d;}
 function nextMonth(v){const [y,m,d]=v.split('-').map(Number),x=new Date(y,m,1),max=new Date(x.getFullYear(),x.getMonth()+1,0).getDate();x.setDate(Math.min(d,max));return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');}
@@ -164,6 +197,7 @@ function showImportInfo(){
 }
 async function doImport(file,kind){
  if(!file)return;
+ activeImports++;
  try{
   if(!lastDecryptionPassword)throw Error('ادخل رمز الدخول أولاً.');
   if(!/\.xls$/i.test(file.name)||file.size>12*1024*1024)throw Error('يجب اختيار ملف XLS الأصلي من المربّع.');
@@ -176,7 +210,7 @@ async function doImport(file,kind){
   localStorage.setItem(MANUAL_KEY,cipher);
   manualState=staged;records=combineRecords();render();showImportInfo();
   showStatus('✓ تم استيراد '+rows.length+' حساب '+(kind==='customer'?'زبائن':'مجهزين')+'، '+importTime(stamp)+' بتوقيت بغداد. على هذا الجهاز فقط.');
- }catch(e){showStatus('لم يتم التحديث: '+(e.message||'تعذر فتح الكشف')+'. البيانات القديمة محفوظة.');}
+ }catch(e){showStatus('لم يتم التحديث: '+(e.message||'تعذر فتح الكشف')+'. البيانات القديمة محفوظة.');}finally{activeImports--;}
 }
 function resetImports(){
  if(!localStorage.getItem(MANUAL_KEY)){showStatus('ماكو كشف يدوي محفوظ.');return;}
@@ -534,16 +568,18 @@ function updateCounts(){const state=getState(),cards=[...document.querySelectorA
 function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[],state=getState();document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=(!onlyJaguar||c.dataset.jaguar==='1')&&(!onlyUnsent||!state[c.dataset.id])&&(!onlyLate||c.dataset.late==='1')&&(!onlyDollar||c.dataset.usd==='1')&&parts.every(p=>h.includes(p))?'':'none';});try{localStorage.setItem(QUERY_KEY,document.getElementById('q').value);}catch(e){}updateCounts();}
 function remember(){if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));localStorage.setItem(QUERY_KEY,document.getElementById('q').value||'');}
 
-async function refreshRemoteDebts(showMessage=false){
- if(refreshingRemote)return;
- refreshingRemote=true;
+function refreshRemoteDebts(showMessage=false){
+ if (!remoteRefresh) remoteRefresh=updateRemoteDebts(showMessage).finally(()=>{remoteRefresh=null;});
+ return remoteRefresh;
+}
+async function updateRemoteDebts(showMessage){
  const previous={dataset,authDataset,receiptDataset,SENT_KEY,POS_KEY};
  try{
   await fetchDataset();
-  if(!records.length)return;
-  if(previous.dataset && previous.dataset.version===dataset.version){
+  if(!records.length)return true;
+  if(previous.dataset && previous.dataset.version===dataset.version && JSON.stringify(previous.dataset.payload_candidates||previous.dataset.payload)===JSON.stringify(dataset.payload_candidates||dataset.payload)){
    if(showMessage)showStatus('الديون محدثة حسب آخر كشف بتاريخ '+dataset.updated_at);
-   return;
+   return true;
   }
   const pass=lastDecryptionPassword||localStorage.getItem(REMEMBER_KEY)||'';
   if(!pass)throw new Error('unlock required');
@@ -551,10 +587,12 @@ async function refreshRemoteDebts(showMessage=false){
   baseRecords=fresh;records=combineRecords();
   render();showImportInfo();
   showStatus('✓ تمت مراجعة كشف الأونلاين، وأي استيراد يدوي بقي محفوظاً.');
+  return true;
  }catch(e){
   ({dataset,authDataset,receiptDataset,SENT_KEY,POS_KEY}=previous);
   if(showMessage)showStatus('ما تم التحديث، حاول مرة ثانية مع اتصال إنترنت.');
- }finally{refreshingRemote=false;}
+  return false;
+ }
 }
 
 async function unlock(pass,rememberPass){
@@ -636,16 +674,24 @@ document.getElementById('lockBtn').addEventListener('click',()=>{localStorage.re
 addEventListener('scroll',()=>{if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));},{passive:true});
 addEventListener('pagehide',remember);
 (async()=>{try{await fetchDataset();const remembered=localStorage.getItem(REMEMBER_KEY);if(remembered)unlock(remembered,true);}catch(e){document.getElementById('err').textContent='تعذر تحميل آخر تحديث. تأكد من الإنترنت.';}})();
-const statementSender = "https://allubab-statement-sender.mohamad-khalid89.chatgpt.site";
-const statementPublicKey = {"kty":"RSA","n":"qEIuStNTcxB3lPRSw1y7C6USm0KA_IWEO_XIqtU5_MhU6waabCLIwiytUYseXSZwhywr6bHjKBX5Z8cwLnBVURVRlAceoUmqicQTCSzm3QVZ4faco-xW8C5NU5wv2ezO185hlijlPsVVodrob8XdivMezxq-xkEw2SBZEd2PFeHKZTeZTzNB7o49SV7Vezxv-2e9lGQ1xQg-t9KAZlk73wDN9g6OdjOvxXHDndMIvWcuJkoP-JazAmkmN2zyA0FmFL0u5E4xs6UtcsXUBJZ2uiwS_fBnbAwaRK0_rnQx8RHuS4WUDBNOGiTnFvCymlvPBBABmxh51cX_mWTQOrUA1Q","e":"AQAB"};
+function asciiDigits(value) {
+ return String(value ?? '').replace(/[٠-٩]/g,c=>String(c.charCodeAt(0)-1632))
+   .replace(/[۰-۹]/g,c=>String(c.charCodeAt(0)-1776));
+}
+
+function statementMessage(name,iqd,usd) {
+ const balances=[];
+ for(const [amount,currency] of [[iqd,'دينار عراقي'],[usd,'دولار']]) {
+  if (amount) balances.push((amount>0?'عليكم ':'إلكم ')+Math.abs(amount).toLocaleString('en-US',{maximumFractionDigits:2})+' '+currency);
+ }
+ return 'أهلاً '+name+'، حسب آخر كشف حساب سما اللباب، رصيدكم: '+balances.join('، ')+'.\nشكراً لتعاونكم، مكتب سما اللباب.';
+}
 
 function statementPhone(row) {
- const digits = s => String(s || '').replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 1632))
-   .replace(/[۰-۹]/g, c => String(c.charCodeAt(0) - 1776));
- const raw = digits(row.phone).trim();
+ const raw = asciiDigits(row.phone).trim();
  const candidates = raw.match(/(?:\+?964[\s-]*|00964[\s-]*|0)7(?:[\s-]*\d){9}(?!\d)/g) || [];
  const normalized = new Set(candidates.map(n => n.replace(/\D/g,'').replace(/^00964/,'964').replace(/^07/,'9647')));
- const existing = digits(row.wa_phone).replace(/[\s+()-]/g,'');
+ const existing = asciiDigits(row.wa_phone).replace(/[\s+()-]/g,'');
  if (/^[1-9]\d{7,14}$/.test(existing)) normalized.add(existing);
  return normalized;
 }
@@ -667,39 +713,221 @@ function statementList(rows) {
   const iqd = balanceNumber(row.iqd), usd = balanceNumber(row.usd);
   if (iqd <= 0 && usd <= 0) continue;
   const [phone] = phones;
-  if (!row.account || !row.name || phones.size !== 1 || phoneOwners.get(phone).size !== 1 || accounts.get(stableSentId(row)) !== 1) { skipped++; continue; }
-  recipients.push({account:String(row.account),name:row.name,phone,iqd,usd});
+  if (!/^\d{1,24}$/.test(String(row.account||'')) || !String(row.name||'').trim() || /[\r\n\t]/.test(row.name) || !Number.isFinite(iqd) || !Number.isFinite(usd) || phones.size !== 1 || phoneOwners.get(phone).size !== 1 || accounts.get(stableSentId(row)) !== 1) { skipped++; continue; }
+  recipients.push({account:String(row.account),phone,iqd,usd,message:statementMessage(row.name,iqd,usd)});
  }
  return {recipients,skipped};
 }
 
-async function openStatementSender() {
- const btn = document.getElementById('sendStatements');
- if (btn.disabled) return;
- if (!lastDecryptionPassword || !records.length) {showStatus('افتح كشف الحساب أولاً.');return;}
- const {recipients,skipped} = statementList(records);
- if (!recipients.length) {showStatus('ماكو حساب مدين مؤهل للإرسال. الحسابات اللي تحتاج مراجعة الرقم: '+skipped);return;}
- btn.disabled = true;
- try {
-  const time = Date.now();
-  const bytes = new TextEncoder().encode(JSON.stringify({time,recipients,skipped}));
-  const aes = await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt']);
-  const rsa = await crypto.subtle.importKey('jwk',statementPublicKey,{name:'RSA-OAEP',hash:'SHA-256'},false,['encrypt']);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const [key,body] = await Promise.all([
-   crypto.subtle.encrypt({name:'RSA-OAEP'},rsa,await crypto.subtle.exportKey('raw',aes)),
-   crypto.subtle.encrypt({name:'AES-GCM',iv},aes,bytes)
-  ]);
-  const pack = b => encodeB64(new Uint8Array(b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  const target = statementSender + '/#' + [key,iv,body].map(pack).join('.');
-  // Top navigation also works in standalone iOS PWAs after asynchronous encryption.
-  const link = document.createElement('a');
-  link.href=target; link.referrerPolicy='origin'; link.target='_self'; document.body.append(link);
-  remember(); link.click(); link.remove();
- } catch {showStatus('تعذر فتح الإرسال. تأكد من الإنترنت وأعد المحاولة.');}
- finally {btn.disabled=false;}
+const shortcutName = 'Allubab Statements';
+const shortcutReadyKey = 'allubab_statement_shortcut_ready_v1';
+const testKey = 'allubab_statement_shortcut_test_v1';
+const localInputLimit = 12000;
+const shortcutEl = id => document.getElementById(id);
+let shortcutBusy = false;
+let unopenedShortcut = null;
+
+function openSetup() {
+ const panel = shortcutEl('shortcutSetup');
+ panel.hidden = false;
+ const pending = sessionStorage.getItem(testKey);
+ shortcutEl('shortcutVerify').hidden = !pending;
+ panel.scrollIntoView({block:'start'});
 }
-document.getElementById('sendStatements').addEventListener('click',openStatementSender);
+
+function normalizedTestPhone(value) {
+ const raw = asciiDigits(value).trim().replace(/[ ()-]/g,'');
+ if (/^07\d{9}$/.test(raw)) return '+964'+raw.slice(1);
+ if (/^9647\d{9}$/.test(raw)) return '+'+raw;
+ const international = raw.replace(/^00/,'+');
+ return /^\+[1-9]\d{7,14}$/.test(international) ? international : '';
+}
+
+function appLink(text) {
+ const query = new URLSearchParams({name:shortcutName,input:'text',text});
+ // Encode spaces as %20 for the native URL parser, including the shortcut name.
+ return 'shortcuts://run-shortcut?'+query.toString().replace(/\+/g,'%20');
+}
+
+function prepareHandoff(entries) {
+ const text = JSON.stringify(Object.fromEntries(entries.map(row=>[row.phone,row.message])));
+ const direct = appLink(text);
+ if (direct.length <= localInputLimit) return {url:direct,text,clipboard:false};
+ return {url:'shortcuts://run-shortcut?name='+encodeURIComponent(shortcutName)+'&input=clipboard',text,clipboard:true};
+}
+
+function leaveForShortcut(target) {
+ unopenedShortcut = {url:target.url,batch:!!target.batch,current:target.current};
+ shortcutEl('shortcutRecovery').hidden = false;
+ window.location.assign(target.url);
+}
+
+function userLeftPage() {
+ unopenedShortcut = null;
+ shortcutEl('shortcutRecovery').hidden = true;
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)userLeftPage();});
+window.addEventListener('pagehide',userLeftPage);
+
+function testShortcut() {
+ if (!lastDecryptionPassword || shortcutBusy) return;
+ const phone = normalizedTestPhone(shortcutEl('shortcutPhone').value);
+ if (!phone) {showStatus('اكتب رقم واتسابك الشخصي للتجربة.');shortcutEl('shortcutPhone').focus();return;}
+ const random = crypto.getRandomValues(new Uint32Array(1))[0];
+ const code = String(1000+random%9000);
+ sessionStorage.setItem(testKey,JSON.stringify({code,expires:Date.now()+30*60*1000}));
+ shortcutEl('shortcutVerify').hidden = false;
+ shortcutEl('shortcutCode').value = '';
+ showStatus('ارجع واكتب الرمز اللي وصلك من رقم المكتب. التجربة تخص رقمك وحده.');
+ leaveForShortcut(prepareHandoff([{phone,message:'تجربة ربط تطبيق سما اللباب. رمز التجربة '+code}]));
+}
+
+function confirmShortcutTest() {
+ const pending = JSON.parse(sessionStorage.getItem(testKey)||'null');
+ const code = asciiDigits(shortcutEl('shortcutCode').value).trim();
+ if (!pending || pending.expires < Date.now() || pending.code !== code) {
+  showStatus('الرمز غير مطابق أو انتهت مدته. أدخل آخر رمز أو أعد التجربة.');
+  return;
+ }
+ localStorage.setItem(shortcutReadyKey,'1');
+ sessionStorage.removeItem(testKey);
+ shortcutEl('shortcutCode').value='';
+ shortcutEl('shortcutPhone').value='';
+ shortcutEl('shortcutSetup').hidden=true;
+ userLeftPage();
+ showStatus('تم ربط الاختصار. زر إرسال الديون للجميع جاهز على هذا الآيفون.');
+}
+
+function openHandoffLog() {
+ return new Promise((resolve,reject)=>{
+  const request=indexedDB.open('allubab-shortcut-handoffs-v1',1);
+  request.onupgradeneeded=()=>request.result.createObjectStore('handed');
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error);
+ });
+}
+
+async function dailyRows(rows) {
+ const day = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const encoder=new TextEncoder();
+ return Promise.all(rows.map(async row=>{
+  const identity=JSON.stringify([row.account,row.phone,row.iqd,row.usd]);
+  const digest=await crypto.subtle.digest('SHA-256',encoder.encode(identity));
+  const key=day+'|'+Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+  return {key,phone:'+'+row.phone,message:row.message};
+ }));
+}
+
+// Claim in one read/write transaction so two tabs cannot launch the same balances twice.
+function claimHandoffs(db,rows) {
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('handed','readwrite');
+  const log=tx.objectStore('handed');
+  const firstKeyToday=rows[0].key.split('|')[0]+'|';
+  log.delete(IDBKeyRange.upperBound(firstKeyToday,true));
+  const read=log.getAllKeys();
+  let fresh=[];
+  read.onsuccess=()=>{
+   const prior=new Set(read.result);
+   fresh=rows.filter(row=>!prior.has(row.key));
+   for(const row of fresh) log.add(1,row.key);
+  };
+  tx.oncomplete=()=>resolve(fresh);
+  tx.onabort=()=>reject(tx.error||new Error('handoff log'));
+ });
+}
+
+function releaseHandoffs(db,rows) {
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('handed','readwrite');
+  for(const row of rows)tx.objectStore('handed').delete(row.key);
+  tx.oncomplete=resolve;
+  tx.onabort=()=>reject(tx.error||new Error('handoff log'));
+ });
+}
+
+async function startStatementHandoff() {
+ if (shortcutBusy || !lastDecryptionPassword) return;
+ if (unopenedShortcut?.batch) {showStatus('إذا ما انفتح الاختصار، اضغط «فتح الاختصار إذا ما انفتح».');return;}
+ if (localStorage.getItem(shortcutReadyKey)!=='1') {openSetup();return;}
+ const seen=statementList(records);
+ const {recipients,skipped}=seen;
+ if (activeImports) {showStatus('جاري استيراد الكشف. اضغط الإرسال بعد ما يكتمل التحديث.');return;}
+ const button=shortcutEl('sendStatements');
+ button.disabled=true;
+ shortcutBusy=true;
+ userLeftPage();
+ let db=null, fresh=[], launched=false;
+ // Safari accepts promised ClipboardItem data when write() starts inside the tap.
+ let supplyClipboard, cancelClipboard, clipboardWrite;
+ const dryTarget=prepareHandoff(recipients.map(row=>({phone:'+'+row.phone,message:row.message})));
+ if (dryTarget.clipboard && navigator.clipboard?.write && typeof ClipboardItem!=='undefined') {
+  const data=new Promise((resolve,reject)=>{supplyClipboard=resolve;cancelClipboard=reject;});
+  data.catch(()=>{});
+  try {
+   clipboardWrite=navigator.clipboard.write([new ClipboardItem({'text/plain':data})]);
+   clipboardWrite.catch(()=>{});
+  } catch {cancelClipboard(new Error('clipboard unavailable'));supplyClipboard=null;}
+ }
+ try {
+  const manualSource=localStorage.getItem(MANUAL_KEY);
+  const local=await loadDebts(lastDecryptionPassword);
+  if (!local?.groups?.customer && !(await refreshRemoteDebts(false))) {
+   showStatus('تعذّر التحقق من آخر كشف أونلاين. اتصل بالإنترنت أو استورد كشف الزبائن المحدّث.');return;
+  }
+  if(activeImports || manualSource!==localStorage.getItem(MANUAL_KEY)) {
+   showStatus('الكشف ديتحدث. افتحه بعد اكتمال التحديث واضغط الإرسال.');return;
+  }
+  manualState=local;
+  records=combineRecords();
+  render();showImportInfo();
+  const snapshot=JSON.stringify(seen);
+  const stillCurrent=()=>!activeImports && manualSource===localStorage.getItem(MANUAL_KEY) && snapshot===JSON.stringify(statementList(records));
+  if(!stillCurrent()) {showStatus('تغيّر الكشف. الأرصدة الجديدة ظاهرة هسه؛ راجعها واضغط إرسال من جديد.');return;}
+  if(!recipients.length) {showStatus('ماكو حساب مدين مؤهل للإرسال. أرقام تحتاج مراجعة: '+skipped);return;}
+  db=await openHandoffLog();
+  fresh=await claimHandoffs(db,await dailyRows(recipients));
+  if (!fresh.length) {showStatus('سبق تحويل كل هالأرصدة للاختصار اليوم. إذا انقطع الإرسال راجع المحادثات، واستخدم «فتح واتساب» للحساب الباقي.');return;}
+  const target=prepareHandoff(fresh);
+  if (target.clipboard) {
+   if (!supplyClipboard) throw Error('clipboard');
+   supplyClipboard(new Blob([target.text],{type:'text/plain'}));
+   await clipboardWrite;
+  }
+  if(!stillCurrent()) {
+   await releaseHandoffs(db,fresh);
+   showStatus('تغيّر الكشف أثناء التجهيز. افتح آخر تحديث واضغط إرسال من جديد.');return;
+  }
+  const prior=recipients.length-fresh.length;
+  showStatus('للإرسال من الاختصار: '+fresh.length+' · سبق تحويله اليوم: '+prior+' · يحتاج مراجعة الرقم أو الكشف: '+skipped+'. راجع واتساب لتأكيد الوصول.');
+  target.batch=true;
+  target.current=stillCurrent;
+  leaveForShortcut(target);
+  launched=true;
+ } catch {
+  if (!launched && db && fresh.length) await releaseHandoffs(db,fresh);
+  userLeftPage();
+  showStatus('تعذر فتح الاختصار. افتح التطبيق في Safari واسمح بالنسخ إذا كانت القائمة كبيرة، ثم جرّب مرة ثانية.');
+ } finally {
+  if(cancelClipboard) cancelClipboard(new Error('no clipboard handoff'));
+  if(db) db.close();
+  button.disabled=false;
+  shortcutBusy=false;
+ }
+}
+
+shortcutEl('tryShortcut').addEventListener('click',testShortcut);
+shortcutEl('verifyShortcut').addEventListener('click',confirmShortcutTest);
+shortcutEl('sendStatements').addEventListener('click',startStatementHandoff);
+shortcutEl('shortcutSettings').addEventListener('click',openSetup);
+shortcutEl('reopenShortcut').addEventListener('click',()=>{
+ const target=unopenedShortcut;
+ if (!target) return;
+ if(target.current && !target.current()) {userLeftPage();showStatus('تغيّر الكشف. اضغط زر الإرسال حتى يتجهّز من الأرصدة الجديدة.');return;}
+ try {
+  leaveForShortcut(target);
+ } catch {showStatus('تعذر فتح الاختصار من هذا المتصفح.');}
+});
 
 </script>
 </body></html>
