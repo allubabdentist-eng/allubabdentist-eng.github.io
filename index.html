@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="25">
+<html lang="ar" dir="rtl" data-app-version="26">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -51,6 +51,11 @@
 .shortcut-setup summary{cursor:pointer;color:#80e7df}
 .shortcut-setup li{margin:.6rem 0}
 .shortcut-setup bdi{direction:ltr;font-weight:650}
+.bulk-choice{display:flex;align-items:center;gap:.55rem;min-height:44px;width:fit-content;color:#d9e7e8;cursor:pointer}
+.bulk-choice input{width:19px;height:19px;accent-color:#42e6e1}
+#bulkExclusions{margin:.5rem 0 1rem}
+#bulkExclusions summary{cursor:pointer;color:#80e7df;padding:.5rem 0}
+#bulkExclusions li{margin:.35rem 0}
 </style>
 </head>
 <body>
@@ -91,6 +96,10 @@
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
  <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="refreshDebts" class="toolbtn" type="button">↻ تحديث الديون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <details id="bulkExclusions" hidden>
+  <summary id="bulkExclusionCount"></summary>
+  <ul id="bulkExclusionNames"></ul>
+ </details>
  <section id="transferSetup" class="debts-import shortcut-setup" hidden aria-labelledby="transferTitle">
   <strong id="transferTitle">رقم تحويل الماستركارد</strong>
   <label for="transferNumber">ثبّت رقم التحويل باسم محمد خالد على هذا الجهاز مرة واحدة.</label>
@@ -610,6 +619,50 @@ function sortedDebtRows(){
   return Math.abs(bi)-Math.abs(ai)||Math.abs(bu)-Math.abs(au)||String(a.name||'').localeCompare(String(b.name||''),'ar');
  });
 }
+const bulkExclusionPrefix='allubab_statement_excluded_customer_v1:';
+function isStatementCustomer(row){
+ return row.category==='customer' && !row.jaguar && !/ج[كگ]و?ا?ر|jaguar/i.test(normalizeArabic(row.name).replace(/\s/g,''));
+}
+function excludedAccount(account){
+ return localStorage.getItem(bulkExclusionPrefix+account)!==null;
+}
+function updateExclusionsView(){
+ const names=[];
+ const seen=new Set();
+ document.querySelectorAll('input[data-bulk-account]').forEach(input=>{
+  const {bulkAccount,customerName}=input.dataset;
+  input.checked=excludedAccount(bulkAccount);
+  if(input.checked && !seen.has(bulkAccount)){
+   seen.add(bulkAccount);
+   names.push('<li>'+esc(customerName)+'</li>');
+  }
+ });
+ document.getElementById('bulkExclusions').hidden=!names.length;
+ document.getElementById('bulkExclusionCount').textContent='الأسماء المستثناة يدوياً ('+names.length+')';
+ document.getElementById('bulkExclusionNames').innerHTML=names.join('');
+}
+function changeBulkExclusion(event){
+ const input=event.target;
+ if(!input.matches('input[data-bulk-account]'))return;
+ const key=bulkExclusionPrefix+input.dataset.bulkAccount;
+ try{
+  if(input.checked)localStorage.setItem(key,'1');
+  else localStorage.removeItem(key);
+ }catch{
+  input.checked=!input.checked;
+  alert('تعذّر حفظ تغيير الاستثناء على هذا الجهاز.');
+  return;
+ }
+ userLeftPage();
+ updateExclusionsView();
+}
+document.getElementById('cards').addEventListener('change',changeBulkExclusion);
+window.addEventListener('storage',event=>{
+ if(records.length && (event.key===null || event.key.startsWith(bulkExclusionPrefix))){
+  userLeftPage();
+  updateExclusionsView();
+ }
+});
 function render(){
  const state=getState(),box=document.getElementById('cards');
  box.innerHTML=sortedDebtRows().map((r,i)=>{
@@ -617,10 +670,14 @@ function render(){
   const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 ماكو تسديد من شهر</span>':'');
   const needsTransfer=hasPayableBalance(r)&&!transferNumber&&(r.wa_phone||r.message);
   const action=needsTransfer?'<button type="button" class="wa setup-transfer">'+(r.wa_phone?'فتح واتساب':'نسخ المسج')+'</button>':r.wa_phone?'<a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a>':(r.message?'<button class="wa copy" type="button" data-copy="'+esc(r.id)+'">نسخ المسج</button>':'<span class="wa disabled">لا توجد مطالبة</span>');
+  const bulkChoice=isStatementCustomer(r) && /^\d{1,24}$/.test(String(r.account||''))
+   ? '<label class="bulk-choice"><input type="checkbox" data-bulk-account="'+esc(String(r.account))+'" data-customer-name="'+esc(r.name)+'">استثناء من الإرسال الجماعي</label>'
+   : '';
   const track=(!r.jaguar&&r.due)?'<div class="payrow"><button type="button" class="paybtn">تسجيل حركة تسديد</button><span class="paydate">'+(last?'آخر حركة: '+esc(last):'بداية المتابعة: 2026-10-25')+'</span></div>':'';
-  return '<div class="card '+(state[r.id]?'sent ':'')+(late?'late':'')+'" data-id="'+esc(r.id)+'" data-jaguar="'+(r.jaguar?'1':'0')+'" data-late="'+(late?'1':'0')+'" data-usd="'+(balanceNumber(r.usd)!==0?'1':'0')+'" data-search="'+esc(r.name+' '+r.phone+' '+(r.account||'')+' '+(r.jaguar?'جكوار جكور':'')+' '+(r.category==='supplier'?'مجهز':''))+'"><div class="topline"><span class="num">'+(i+1)+'</span><strong>'+esc(r.name)+'</strong>'+tags+'</div><div class="amount">'+esc(r.amount)+'</div>'+(r.usdLabel?'<div class="usd">'+esc(r.usdLabel)+'</div>':'')+'<div class="phone">'+esc(r.phone||'بدون رقم')+'</div><div class="actions">'+action+'<button class="done" type="button">'+(state[r.id]?'تم':'تم الإرسال')+'</button></div>'+track+'</div>';
+  return '<div class="card '+(state[r.id]?'sent ':'')+(late?'late':'')+'" data-id="'+esc(r.id)+'" data-jaguar="'+(r.jaguar?'1':'0')+'" data-late="'+(late?'1':'0')+'" data-usd="'+(balanceNumber(r.usd)!==0?'1':'0')+'" data-search="'+esc(r.name+' '+r.phone+' '+(r.account||'')+' '+(r.jaguar?'جكوار جكور':'')+' '+(r.category==='supplier'?'مجهز':''))+'"><div class="topline"><span class="num">'+(i+1)+'</span><strong>'+esc(r.name)+'</strong>'+tags+'</div><div class="amount">'+esc(r.amount)+'</div>'+(r.usdLabel?'<div class="usd">'+esc(r.usdLabel)+'</div>':'')+'<div class="phone">'+esc(r.phone||'بدون رقم')+'</div><div class="actions">'+action+'<button class="done" type="button">'+(state[r.id]?'تم':'تم الإرسال')+'</button></div>'+bulkChoice+track+'</div>';
  }).join('');
  box.querySelectorAll('.card').forEach(c=>{c.querySelector('.done').addEventListener('click',()=>toggle(c));const setup=c.querySelector('.setup-transfer');if(setup)setup.addEventListener('click',showTransferSetup);const a=c.querySelector('a.wa');if(a)a.addEventListener('click',remember);const copy=c.querySelector('button.copy');if(copy)copy.addEventListener('click',()=>copyMessage(copy));const p=c.querySelector('.paybtn');if(p)p.addEventListener('click',()=>recordPaid(c));});
+ updateExclusionsView();
  filterCards();
 }
 async function copyMessage(btn){
@@ -781,7 +838,7 @@ function statementList(rows) {
   }
  }
  for (const {row,phones} of enriched) {
-  if (row.category !== 'customer' || row.jaguar || /ج[كگ]و?ا?ر|jaguar/i.test(normalizeArabic(row.name).replace(/\s/g,''))) continue;
+  if (!isStatementCustomer(row) || excludedAccount(row.account)) continue;
   const iqd = balanceNumber(row.iqd), usd = balanceNumber(row.usd);
   if (iqd <= 0 && usd <= 0) continue;
   const [phone] = phones;
@@ -923,7 +980,9 @@ async function startStatementHandoff() {
  if (unopenedShortcut?.batch) {showStatus('إذا ما انفتح الاختصار، اضغط «فتح الاختصار إذا ما انفتح».');return;}
  if (localStorage.getItem(shortcutReadyKey)!=='1') {openSetup();return;}
  if(!transferNumber){showTransferSetup();return;}
- const seen=statementList(records);
+ let seen;
+ try{seen=statementList(records);}
+ catch{showStatus('تعذّر التحقق من الأسماء المستثناة. افتح التطبيق مرة ثانية.');return;}
  const {recipients,skipped}=seen;
  if (activeImports) {showStatus('جاري استيراد الكشف. اضغط الإرسال بعد ما يكتمل التحديث.');return;}
  const button=shortcutEl('sendStatements');
@@ -956,8 +1015,8 @@ async function startStatementHandoff() {
   render();showImportInfo();
   const snapshot=JSON.stringify(seen);
   const stillCurrent=()=>!activeImports && manualSource===localStorage.getItem(MANUAL_KEY) && snapshot===JSON.stringify(statementList(records));
-  if(!stillCurrent()) {showStatus('تغيّر الكشف. الأرصدة الجديدة ظاهرة هسه؛ راجعها واضغط إرسال من جديد.');return;}
-  if(!recipients.length) {showStatus('ماكو حساب مدين مؤهل للإرسال. أرقام تحتاج مراجعة: '+skipped);return;}
+  if(!stillCurrent()) {showStatus('تغيّر الكشف أو تغيّرت الأسماء المستثناة. راجع القائمة قبل الإرسال.');return;}
+  if(!recipients.length) {showStatus('ماكو حساب مؤهّل للإرسال بعد الاستثناءات. أرقام تحتاج مراجعة: '+skipped);return;}
   db=await openHandoffLog();
   fresh=await claimHandoffs(db,await dailyRows(recipients));
   if (!fresh.length) {showStatus('سبق تحويل كل هالأرصدة للاختصار اليوم. إذا انقطع الإرسال راجع المحادثات، واستخدم «فتح واتساب» للحساب الباقي.');return;}
@@ -969,7 +1028,7 @@ async function startStatementHandoff() {
   }
   if(!stillCurrent()) {
    await releaseHandoffs(db,fresh);
-   showStatus('تغيّر الكشف أثناء التجهيز. افتح آخر تحديث واضغط إرسال من جديد.');return;
+   showStatus('تغيّر الكشف أو تغيّرت الأسماء المستثناة أثناء التجهيز. راجع القائمة قبل الإرسال.');return;
   }
   const prior=recipients.length-fresh.length;
   showStatus('للإرسال من الاختصار: '+fresh.length+' · سبق تحويله اليوم: '+prior+' · يحتاج مراجعة الرقم أو الكشف: '+skipped+'. راجع واتساب لتأكيد الوصول.');
