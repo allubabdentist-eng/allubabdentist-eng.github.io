@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="24">
+<html lang="ar" dir="rtl" data-app-version="25">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -91,6 +91,13 @@
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
  <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="refreshDebts" class="toolbtn" type="button">↻ تحديث الديون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <section id="transferSetup" class="debts-import shortcut-setup" hidden aria-labelledby="transferTitle">
+  <strong id="transferTitle">رقم تحويل الماستركارد</strong>
+  <label for="transferNumber">ثبّت رقم التحويل باسم محمد خالد على هذا الجهاز مرة واحدة.</label>
+  <input id="transferNumber" type="text" inputmode="numeric" dir="ltr" autocomplete="off">
+  <button id="saveTransfer" class="toolbtn" type="button">تثبيت رقم التحويل</button>
+  <p id="transferStatus" role="status"></p>
+ </section>
  <section id="shortcutSetup" class="debts-import shortcut-setup" hidden aria-labelledby="setupTitle">
   <strong id="setupTitle">واتساب بزنس على الآيفون</strong>
   <p>أول مرة، جهّز الاختصار وجرّب الربط على رقمك. بعدها زر «إرسال الديون للجميع» يشغّله مباشرة.</p>
@@ -157,12 +164,15 @@ async function sealDebts(obj,pass){
  const buf=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj))));
  return JSON.stringify({v:1,salt:encodeB64(salt),iv:encodeB64(iv),cipher:encodeB64(buf)});
 }
-async function loadDebts(pass){
- const saved=localStorage.getItem(MANUAL_KEY);if(!saved)return null;
+async function unsealLocal(saved,pass){
  const v=JSON.parse(saved);if(v.v!==1)throw Error('Saved debts version invalid');
  const key=await importKey(pass,b64bytes(v.salt),['decrypt']);
  const buffer=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bytes(v.iv)},key,b64bytes(v.cipher));
- const restored=JSON.parse(new TextDecoder().decode(buffer));
+ return JSON.parse(new TextDecoder().decode(buffer));
+}
+async function loadDebts(pass){
+ const saved=localStorage.getItem(MANUAL_KEY);if(!saved)return null;
+ const restored=await unsealLocal(saved,pass);
  if(!restored||!restored.groups||typeof restored.groups!=='object')throw Error('Invalid saved data');
  return restored;
 }
@@ -528,7 +538,61 @@ function saveState(st){
  }catch(e){console.warn('Unable to save sent status',e);}
  updateCounts();
 }
-function waUrl(r){return 'https://wa.me/'+encodeURIComponent(r.wa_phone)+'?text='+encodeURIComponent(r.message);}
+const transferLocalKey='allubab_transfer_account_v1';
+const transferEnvelope={"salt":"0vXYHKtS2wDWLlej3eqhEg==","iv":"i5nFIXIhLTc8b7GF","cipher":"bhI4Qv73TiKM0X5/UTIy0j6udFBp9kvggUKE0w=="};
+let transferNumber='';
+
+async function openTransferNumber(key){
+ const bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64bytes(transferEnvelope.iv)},key,b64bytes(transferEnvelope.cipher));
+ return new TextDecoder().decode(bytes);
+}
+function showTransferSetup(){
+ const panel=document.getElementById('transferSetup');
+ panel.hidden=false;
+ panel.scrollIntoView({block:'start'});
+ document.getElementById('transferNumber').focus();
+}
+async function saveTransferNumber(number,pass){
+ const sealed=await sealDebts(number,pass);
+ localStorage.setItem(transferLocalKey,sealed);
+ transferNumber=number;
+ document.getElementById('transferSetup').hidden=true;
+}
+async function restoreTransferNumber(pass){
+ const match=(location.hash||'').match(/^#transfer=([a-f0-9]{64})$/);
+ try{
+  if(match){
+   const bytes=Uint8Array.from(match[1].match(/../g),pair=>parseInt(pair,16));
+   const key=await crypto.subtle.importKey('raw',bytes,'AES-GCM',false,['decrypt']);
+   await saveTransferNumber(await openTransferNumber(key),pass);
+   history.replaceState(null,'',location.pathname+location.search);
+   showStatus('تم تثبيت ماستركارد محمد خالد برسائل الديون.');
+   return;
+  }
+  const saved=localStorage.getItem(transferLocalKey);
+  if(saved)transferNumber=await unsealLocal(saved,pass);
+ }catch{document.getElementById('transferStatus').textContent='افتح رابط التثبيت أو اكتب رقم التحويل المعتمد.';}
+ document.getElementById('transferSetup').hidden=Boolean(transferNumber);
+}
+async function enterTransferNumber(){
+ if(!lastDecryptionPassword)return;
+ const input=document.getElementById('transferNumber'),status=document.getElementById('transferStatus');
+ const digits=asciiDigits(input.value).replace(/\s/g,'');
+ try{
+  const key=await importKey(digits,b64bytes(transferEnvelope.salt),['decrypt']);
+  const number=await openTransferNumber(key);
+  await saveTransferNumber(number,lastDecryptionPassword);
+  input.value='';render();showStatus('تم تثبيت ماستركارد محمد خالد برسائل الديون.');
+ }catch{status.textContent='تعذّر تثبيت الرقم. تأكد من رقم التحويل وحاول مرة ثانية.';}
+}
+document.getElementById('saveTransfer').addEventListener('click',enterTransferNumber);
+function hasPayableBalance(r){return r.category==='customer' && (balanceNumber(r.iqd)>0 || balanceNumber(r.usd)>0);}
+function withTransferDetails(message){
+ if(!transferNumber)throw Error('Transfer number not set');
+ return message+'\n\nللتسديد، تگدرون تحوّلون على الماستركارد باسم محمد خالد.\nرقم التحويل: '+transferNumber+'\nوبعد التحويل، يرجى إرسال صورة الوصل على هذا الواتساب.';
+}
+function individualMessage(r){return r.message && hasPayableBalance(r)?withTransferDetails(r.message):r.message;}
+function waUrl(r){return 'https://wa.me/'+encodeURIComponent(r.wa_phone)+'?text='+encodeURIComponent(individualMessage(r));}
 function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 function debtPriority(r){
  const dinar=balanceNumber(r.iqd),dollar=balanceNumber(r.usd);
@@ -551,16 +615,18 @@ function render(){
  box.innerHTML=sortedDebtRows().map((r,i)=>{
   const late=overdue(r),last=(!r.jaguar&&r.due)?lastPaid(r):null;
   const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 ماكو تسديد من شهر</span>':'');
-  const action=r.wa_phone?'<a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a>':(r.message?'<button class="wa copy" type="button" data-copy="'+esc(r.id)+'">نسخ المسج</button>':'<span class="wa disabled">لا توجد مطالبة</span>');
+  const needsTransfer=hasPayableBalance(r)&&!transferNumber&&(r.wa_phone||r.message);
+  const action=needsTransfer?'<button type="button" class="wa setup-transfer">'+(r.wa_phone?'فتح واتساب':'نسخ المسج')+'</button>':r.wa_phone?'<a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a>':(r.message?'<button class="wa copy" type="button" data-copy="'+esc(r.id)+'">نسخ المسج</button>':'<span class="wa disabled">لا توجد مطالبة</span>');
   const track=(!r.jaguar&&r.due)?'<div class="payrow"><button type="button" class="paybtn">تسجيل حركة تسديد</button><span class="paydate">'+(last?'آخر حركة: '+esc(last):'بداية المتابعة: 2026-10-25')+'</span></div>':'';
   return '<div class="card '+(state[r.id]?'sent ':'')+(late?'late':'')+'" data-id="'+esc(r.id)+'" data-jaguar="'+(r.jaguar?'1':'0')+'" data-late="'+(late?'1':'0')+'" data-usd="'+(balanceNumber(r.usd)!==0?'1':'0')+'" data-search="'+esc(r.name+' '+r.phone+' '+(r.account||'')+' '+(r.jaguar?'جكوار جكور':'')+' '+(r.category==='supplier'?'مجهز':''))+'"><div class="topline"><span class="num">'+(i+1)+'</span><strong>'+esc(r.name)+'</strong>'+tags+'</div><div class="amount">'+esc(r.amount)+'</div>'+(r.usdLabel?'<div class="usd">'+esc(r.usdLabel)+'</div>':'')+'<div class="phone">'+esc(r.phone||'بدون رقم')+'</div><div class="actions">'+action+'<button class="done" type="button">'+(state[r.id]?'تم':'تم الإرسال')+'</button></div>'+track+'</div>';
  }).join('');
- box.querySelectorAll('.card').forEach(c=>{c.querySelector('.done').addEventListener('click',()=>toggle(c));const a=c.querySelector('a.wa');if(a)a.addEventListener('click',remember);const copy=c.querySelector('button.copy');if(copy)copy.addEventListener('click',()=>copyMessage(copy));const p=c.querySelector('.paybtn');if(p)p.addEventListener('click',()=>recordPaid(c));});
+ box.querySelectorAll('.card').forEach(c=>{c.querySelector('.done').addEventListener('click',()=>toggle(c));const setup=c.querySelector('.setup-transfer');if(setup)setup.addEventListener('click',showTransferSetup);const a=c.querySelector('a.wa');if(a)a.addEventListener('click',remember);const copy=c.querySelector('button.copy');if(copy)copy.addEventListener('click',()=>copyMessage(copy));const p=c.querySelector('.paybtn');if(p)p.addEventListener('click',()=>recordPaid(c));});
  filterCards();
 }
 async function copyMessage(btn){
  const r=records.find(x=>x.id===btn.dataset.copy);if(!r||!r.message)return;
- try{await navigator.clipboard.writeText(r.message);}catch(e){const ta=document.createElement('textarea');ta.value=r.message;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
+ const message=individualMessage(r);
+ try{await navigator.clipboard.writeText(message);}catch(e){const ta=document.createElement('textarea');ta.value=message;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
  btn.textContent='تم نسخ المسج';
 }
 function toggle(card){const state=getState(),id=card.dataset.id;state[id]=!state[id];if(!state[id])delete state[id];card.classList.toggle('sent',!!state[id]);card.querySelector('.done').textContent=state[id]?'تم':'تم الإرسال';saveState(state);if(onlyUnsent)filterCards();}
@@ -600,6 +666,7 @@ async function unlock(pass,rememberPass){
  try{
   baseRecords=await decrypt(pass);
   lastDecryptionPassword=pass;
+  await restoreTransferNumber(pass);
   let importWarning='';
   try{manualState=await loadDebts(pass);}catch(e){manualState=null;importWarning='تنبيه: ما أمكن قراءة كشف الديون المحلي المحفوظ. ما تم حذفه.';}
   records=combineRecords();
@@ -607,6 +674,7 @@ async function unlock(pass,rememberPass){
   document.getElementById('lockScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');
   document.getElementById('q').value=localStorage.getItem(QUERY_KEY)||'';render();showImportInfo();if(importWarning)showStatus(importWarning);
   if(location.hash==='#whatsapp-setup') openSetup();
+  else if(location.hash==='#transfer' || (location.hash||'').startsWith('#transfer=')) showTransferSetup();
   else {
    const y=parseInt(localStorage.getItem(POS_KEY)||'0',10);
    if(y)setTimeout(()=>scrollTo(0,y),60);
@@ -688,7 +756,7 @@ function statementMessage(name,iqd,usd) {
  for(const [amount,currency] of [[iqd,'دينار عراقي'],[usd,'دولار']]) {
   if (amount) balances.push((amount>0?'عليكم ':'إلكم ')+Math.abs(amount).toLocaleString('en-US',{maximumFractionDigits:2})+' '+currency);
  }
- return 'أهلاً '+name+'، حسب آخر كشف حساب سما اللباب، رصيدكم: '+balances.join('، ')+'.\nشكراً لتعاونكم، مكتب سما اللباب.';
+ return withTransferDetails('أهلاً '+name+'، حسب آخر كشف حساب سما اللباب، رصيدكم: '+balances.join('، ')+'.\nشكراً لتعاونكم، مكتب سما اللباب.');
 }
 
 function statementPhone(row) {
@@ -854,6 +922,7 @@ async function startStatementHandoff() {
  if (shortcutBusy || !lastDecryptionPassword) return;
  if (unopenedShortcut?.batch) {showStatus('إذا ما انفتح الاختصار، اضغط «فتح الاختصار إذا ما انفتح».');return;}
  if (localStorage.getItem(shortcutReadyKey)!=='1') {openSetup();return;}
+ if(!transferNumber){showTransferSetup();return;}
  const seen=statementList(records);
  const {recipients,skipped}=seen;
  if (activeImports) {showStatus('جاري استيراد الكشف. اضغط الإرسال بعد ما يكتمل التحديث.');return;}
@@ -925,7 +994,10 @@ shortcutEl('verifyShortcut').addEventListener('click',confirmShortcutTest);
 shortcutEl('sendStatements').addEventListener('click',startStatementHandoff);
 shortcutEl('shortcutSettings').addEventListener('click',openSetup);
 window.addEventListener('hashchange',()=>{
- if(location.hash==='#whatsapp-setup' && !shortcutEl('app').classList.contains('hidden')) openSetup();
+ if(shortcutEl('app').classList.contains('hidden'))return;
+ if(location.hash==='#whatsapp-setup')openSetup();
+ if(location.hash==='#transfer')showTransferSetup();
+ if(location.hash.startsWith('#transfer='))restoreTransferNumber(lastDecryptionPassword).then(()=>render());
 });
 shortcutEl('reopenShortcut').addEventListener('click',()=>{
  const target=unopenedShortcut;
