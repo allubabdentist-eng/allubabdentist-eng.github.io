@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="29">
+<html lang="ar" dir="rtl" data-app-version="30">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -56,6 +56,13 @@
 #bulkExclusions{margin:.5rem 0 1rem}
 #bulkExclusions summary{cursor:pointer;color:#80e7df;padding:.5rem 0}
 #bulkExclusions li{margin:.35rem 0}
+.daily-actions{display:grid;grid-template-columns:1fr}
+.daily-actions .toolbtn{min-height:46px;font-size:16px;padding:12px}
+.extra-options{margin:0 0 14px;border:1px solid #21494b;border-radius:12px;padding:0 12px}
+.extra-options summary{cursor:pointer;color:#80e7df;padding:12px 0;font-size:15px}
+.extra-options .toolbar{margin:0 0 12px}
+.extra-options .toolbtn{min-height:42px}
+.maintenance-options{border-top:1px solid #21494b}
 </style>
 </head>
 <body>
@@ -94,7 +101,27 @@
   <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 بدون تسديد شهر: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar daily-actions">
+<button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button>
+<button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button>
+ </div>
+ <details class="extra-options">
+  <summary>المزيد</summary>
+  <div class="toolbar"><button id="jagBtn" class="toolbtn">جكوار (79)</button>
+<button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button>
+<button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button>
+<button id="clearSearch" class="toolbtn">مسح البحث</button></div>
+  <details class="maintenance-options">
+   <summary>الإعدادات وحفظ العلامات</summary>
+   <div class="toolbar"><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button>
+<button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button>
+<button id="sentImport" class="toolbtn" type="button">استيراد علامات</button>
+<button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button>
+<button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button>
+<button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button>
+<button id="lockBtn" class="toolbtn">قفل الصفحة</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden></div>
+  </details>
+ </details>
  <details id="bulkExclusions" hidden>
   <summary id="bulkExclusionCount"></summary>
   <ul id="bulkExclusionNames"></ul>
