@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="33">
+<html lang="ar" dir="rtl" data-app-version="34">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -86,15 +86,15 @@
  <div id="manualInfo" role="status" aria-live="polite">لا يوجد كشف يدوي.</div>
 </section>
 
- <div class="payment-help">بعد مرور شهر على تاريخ المتابعة المسجّل للحساب بدون حركة تسديد، يظهر الحساب المدين بالأحمر. عند تسجيل تسديد تبدأ مهلة شهر جديدة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
+ <div class="payment-help">إذا بقى رصيد الحساب بالدينار والدولار ثابتاً شهراً كاملاً يظهر بالأحمر. عند استيراد كشف يتغيّر بيه أي مبلغ، يبدأ احتساب الشهر من تاريخ رصد التغيّر. رفع كشف بنفس المبالغ يحافظ على بداية المتابعة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
  <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong id="toUsIqd" style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">…</strong><strong id="toUsUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">…</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong id="weOweIqd" style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">…</strong><strong id="weOweUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">…</strong></div></section><div id="balanceSource" style="font-size:13px;color:#b8c6c8;margin-bottom:12px;line-height:1.6"></div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
-  <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 بدون تسديد شهر: 0</span>
+  <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 رصيد ثابت شهر: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 رصيد ثابت شهر</button><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
  <details id="bulkExclusions" hidden>
   <summary id="bulkExclusionCount"></summary>
   <ul id="bulkExclusionNames"></ul>
@@ -143,15 +143,30 @@ const REMEMBER_KEY='sama_allubab_debt_unlock_web_v1';
 const QUERY_KEY='sama_allubab_debt_query_web_v2';
 let records=[], authDataset=null, SENT_KEY='', POS_KEY='', onlyJaguar=false, onlyUnsent=false, onlyLate=false, onlyDollar=false;
 const SENT_RESET_BACKUP_KEY='sama_allubab_debt_sent_pre_reset_backup_v1';
-const PAYMENT_KEY='sama_allubab_debt_payment_dates_v1',PAYMENT_START='2026-10-25';
+const PAYMENT_KEY='sama_allubab_debt_payment_dates_v1';
 let lastDecryptionPassword='',activeImports=0;
-function today(){const x=new Date();return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');}
+function balanceDate(value=new Date()){
+ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Baghdad',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+}
+function today(){return balanceDate();}
 function dateOK(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const [y,m,d]=v.split('-').map(Number),x=new Date(y,m-1,d);return x.getFullYear()===y&&x.getMonth()===m-1&&x.getDate()===d;}
 function nextMonth(v){const [y,m,d]=v.split('-').map(Number),x=new Date(y,m,1),max=new Date(x.getFullYear(),x.getMonth()+1,0).getDate();x.setDate(Math.min(d,max));return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');}
 function paymentDates(){return readSentObject(PAYMENT_KEY)||{};}
 function paymentId(r){return stableSentId(r);}
 function lastPaid(r){const p=paymentDates()[paymentId(r)];const local=p&&dateOK(p.date)?p.date:null,server=dateOK(r.balance_reduced_on)?r.balance_reduced_on:null;return local&&server?(local>server?local:server):(local||server);}
-function overdue(r){if(!r.due||r.jaguar)return false;const d=lastPaid(r);return today()>=nextMonth(d&&d>PAYMENT_START?d:PAYMENT_START);}
+function overdue(r){
+ return r.due && !r.jaguar && dateOK(r.balance_since) && today()>=nextMonth(r.balance_since);
+}
+function trackBalances(rows,previousRows,observedOn){
+ const previous=new Map(previousRows.map(row=>[String(row.account),row]));
+ return rows.map(row=>{
+  const old=previous.get(String(row.account));
+  const unchanged=old && ['iqd','usd'].every(currency=>
+   Math.round(balanceNumber(old[currency])*100)===Math.round(balanceNumber(row[currency])*100));
+  const since=unchanged && dateOK(old.balance_since)?old.balance_since:observedOn;
+  return {...row,balance_since:since};
+ });
+}
 function recordPaid(card){
  const r=records.find(x=>x.id===card.dataset.id);if(!r||r.jaguar||!r.due)return;
  const entered=prompt('تاريخ حركة التسديد (YYYY-MM-DD):',lastPaid(r)||today());if(entered===null)return;
@@ -182,6 +197,21 @@ async function loadDebts(pass){
  const saved=localStorage.getItem(MANUAL_KEY);if(!saved)return null;
  const restored=await unsealLocal(saved,pass);
  if(!restored||!restored.groups||typeof restored.groups!=='object')throw Error('Invalid saved data');
+ let migrated=false;
+ for(const group of Object.values(restored.groups)){
+  if(!Array.isArray(group.rows))throw Error('Invalid saved account list');
+  const importedOn=Number.isFinite(Date.parse(group.at))?balanceDate(group.at):today();
+  group.rows=group.rows.map(row=>{
+   if(dateOK(row.balance_since))return row;
+   migrated=true;
+   return {...row,balance_since:importedOn<=today()?importedOn:today()};
+  });
+ }
+ if(migrated){
+  const updated=await sealDebts(restored,pass);
+  if(localStorage.getItem(MANUAL_KEY)!==saved)throw Error('الكشف تغيّر أثناء القراءة، أعد المحاولة.');
+  localStorage.setItem(MANUAL_KEY,updated);
+ }
  return restored;
 }
 function combineRecords(){
@@ -224,6 +254,7 @@ function showImportInfo(){
 }
 async function doImport(file,kind){
  if(!file)return;
+ if(activeImports){showStatus('انتظر اكتمال استيراد الكشف الحالي.');return;}
  activeImports++;
  try{
   if(!lastDecryptionPassword)throw Error('ادخل رمز الدخول أولاً.');
@@ -232,8 +263,12 @@ async function doImport(file,kind){
   const count=records.filter(r=>r.category===kind).length;
   if(!confirm('اسم الملف: '+file.name+'\nحسابات جديدة: '+rows.length+'، الموجودة: '+count+'.\nتريد تعتمد هذا الكشف على هذا الآيفون؟\nعلامات الإرسال وتواريخ التسديد والقسم الثاني ما تتغير.'))return;
   const stamp=new Date().toISOString();
-  const staged={groups:{...(manualState?.groups||{}),[kind]:{rows,file:file.name,at:stamp}}};
+  const current=await loadDebts(lastDecryptionPassword);
+  const saved=localStorage.getItem(MANUAL_KEY);
+  const trackedRows=trackBalances(rows,current?.groups?.[kind]?.rows||[],balanceDate(stamp));
+  const staged={groups:{...(current?.groups||{}),[kind]:{rows:trackedRows,file:file.name,at:stamp}}};
   const cipher=await sealDebts(staged,lastDecryptionPassword);
+  if(localStorage.getItem(MANUAL_KEY)!==saved)throw Error('الكشف تغيّر أثناء الاستيراد، ارفع الملف مرة ثانية.');
   localStorage.setItem(MANUAL_KEY,cipher);
   manualState=staged;records=combineRecords();render();showImportInfo();
   showStatus('✓ تم استيراد '+rows.length+' حساب '+(kind==='customer'?'زبائن':'مجهزين')+'، '+importTime(stamp)+' بتوقيت بغداد. على هذا الجهاز فقط.');
@@ -621,13 +656,13 @@ function render(){
  const state=getState(),box=document.getElementById('cards');
  box.innerHTML=sortedDebtRows().map((r,i)=>{
   const late=overdue(r),last=(!r.jaguar&&r.due)?lastPaid(r):null;
-  const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 ماكو تسديد من شهر</span>':'');
+  const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 الرصيد ثابت من شهر</span>':'');
   const needsTransfer=hasPayableBalance(r)&&!transferNumber&&(r.wa_phone||r.message);
   const action=needsTransfer?'<button type="button" class="wa setup-transfer">'+(r.wa_phone?'فتح واتساب':'نسخ المسج')+'</button>':r.wa_phone?'<a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a>':(r.message?'<button class="wa copy" type="button" data-copy="'+esc(r.id)+'">نسخ المسج</button>':'<span class="wa disabled">لا توجد مطالبة</span>');
   const bulkChoice=isStatementCustomer(r) && /^\d{1,24}$/.test(String(r.account||''))
    ? '<label class="bulk-choice"><input type="checkbox" data-bulk-account="'+esc(String(r.account))+'" data-customer-name="'+esc(r.name)+'">استثناء من الإرسال الجماعي</label>'
    : '';
-  const track=(!r.jaguar&&r.due)?'<div class="payrow"><button type="button" class="paybtn">تسجيل حركة تسديد</button><span class="paydate">'+(last?'آخر حركة: '+esc(last):'بداية المتابعة: '+PAYMENT_START)+'</span></div>':'';
+  const track=(!r.jaguar&&r.due)?'<div class="payrow"><button type="button" class="paybtn">تسجيل حركة تسديد</button><span class="paydate">'+('متابعة الرصيد منذ: '+esc(r.balance_since)+(last?' • تسديد مسجّل: '+esc(last):''))+'</span></div>':'';
   return '<div class="card '+(state[r.id]?'sent ':'')+(late?'late':'')+'" data-id="'+esc(r.id)+'" data-jaguar="'+(r.jaguar?'1':'0')+'" data-late="'+(late?'1':'0')+'" data-usd="'+(balanceNumber(r.usd)!==0?'1':'0')+'" data-search="'+esc(r.name+' '+r.phone+' '+(r.account||'')+' '+(r.jaguar?'جكوار جكور':'')+' '+(r.category==='supplier'?'مجهز':''))+'"><div class="topline"><span class="num">'+(i+1)+'</span><strong>'+esc(r.name)+'</strong>'+tags+'</div><div class="amount">'+esc(r.amount)+'</div>'+(r.usdLabel?'<div class="usd">'+esc(r.usdLabel)+'</div>':'')+'<div class="phone">'+esc(r.phone||'بدون رقم')+'</div><div class="actions">'+action+'<button class="done" type="button">'+(state[r.id]?'تم':'تم الإرسال')+'</button></div>'+bulkChoice+track+'</div>';
  }).join('');
  box.querySelectorAll('.card').forEach(c=>{c.querySelector('.done').addEventListener('click',()=>toggle(c));const setup=c.querySelector('.setup-transfer');if(setup)setup.addEventListener('click',showTransferSetup);const a=c.querySelector('a.wa');if(a)a.addEventListener('click',remember);const copy=c.querySelector('button.copy');if(copy)copy.addEventListener('click',()=>copyMessage(copy));const p=c.querySelector('.paybtn');if(p)p.addEventListener('click',()=>recordPaid(c));});
@@ -641,7 +676,7 @@ async function copyMessage(btn){
  btn.textContent='تم نسخ المسج';
 }
 function toggle(card){const state=getState(),id=card.dataset.id;state[id]=!state[id];if(!state[id])delete state[id];card.classList.toggle('sent',!!state[id]);card.querySelector('.done').textContent=state[id]?'تم':'تم الإرسال';saveState(state);if(onlyUnsent)filterCards();}
-function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('lateCount').textContent='🔴 بدون تسديد شهر: '+cards.filter(c=>c.dataset.late==='1').length;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
+function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('lateCount').textContent='🔴 رصيد ثابت شهر: '+cards.filter(c=>c.dataset.late==='1').length;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
 function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[],state=getState();document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=(!onlyJaguar||c.dataset.jaguar==='1')&&(!onlyUnsent||!state[c.dataset.id])&&(!onlyLate||c.dataset.late==='1')&&(!onlyDollar||c.dataset.usd==='1')&&parts.every(p=>h.includes(p))?'':'none';});try{localStorage.setItem(QUERY_KEY,document.getElementById('q').value);}catch(e){}updateCounts();}
 function remember(){if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));localStorage.setItem(QUERY_KEY,document.getElementById('q').value||'');}
 
