@@ -9,6 +9,7 @@
 <script>
 const app = new URL('./index.html', location.href);
 app.search = location.search;
+app.searchParams.set('launch', Date.now().toString());
 app.hash = location.hash;
 location.replace(app.href);
 </script>
