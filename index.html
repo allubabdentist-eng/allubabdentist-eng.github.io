@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="27">
+<html lang="ar" dir="rtl" data-app-version="28">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -71,7 +71,7 @@
 </div>
 <div id="app" class="wrap hidden">
  <h1>تحصيل ديون سما اللباب</h1>
- <div class="sub">تحديث 25 تشرين الأول: الأرصدة محدثة حسب آخر ملف زبائن ومجهزين. القائمة مرتّبة من الدين الأكبر إلى الأصغر، بالدينار أولاً ثم الدولار، وتظهر الأرصدة الدائنة بالأخير. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
+ <div class="sub">القائمة مرتّبة من الدين الأكبر إلى الأصغر، بالدينار أولاً ثم الدولار، وتظهر الأرصدة الدائنة بالأخير. الحسابات المسددة بالكامل لا تظهر بقائمة الديون النشطة. افتح واتساب، ثم علّم «تم الإرسال» بعد إرسال المسج.</div>
  <div class="update" id="updated">جاري تحميل آخر تحديث…</div>
 
 <section class="debts-import">
@@ -88,14 +88,14 @@
 </section>
 
  <div class="payment-help">مراقبة التسديد تبدأ بتاريخ <b>25/10/2026</b>. بعد شهر كامل بدون حركة تسديد، يظهر الحساب المدين بالأحمر (أول يوم <b>25/11/2026</b>). عند تسجيل تسديد تبدأ مهلة شهر جديدة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
- <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong id="toUsIqd" style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">211,673,570 د.ع</strong><strong id="toUsUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">1,496.50 $</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong id="weOweIqd" style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">2,325,500 د.ع</strong><strong id="weOweUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">10,998.77 $</strong></div></section><div style="font-size:12px;color:#b8c6c8;margin-bottom:12px">مجموع كشف 25/10/2026 المعتمد حسب الملفات الجديدة • المبالغ السابقة المسددة محسوبة بالكشف • الدينار والدولار منفصلين</div>
+ <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong id="toUsIqd" style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">…</strong><strong id="toUsUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">…</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong id="weOweIqd" style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">…</strong><strong id="weOweUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">…</strong></div></section><div id="balanceSource" style="font-size:13px;color:#b8c6c8;margin-bottom:12px;line-height:1.6"></div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
   <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 بدون تسديد شهر: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="refreshDebts" class="toolbtn" type="button">↻ تحديث الديون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="refreshDebts" class="toolbtn" type="button">↻ تحديث كشف الأونلاين</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button><button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button><button id="sentImport" class="toolbtn" type="button">استيراد علامات</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
  <details id="bulkExclusions" hidden>
   <summary id="bulkExclusionCount"></summary>
   <ul id="bulkExclusionNames"></ul>
@@ -207,10 +207,17 @@ function updateMoneySummary(){
 
 function showImportInfo(){
  updateMoneySummary();
- const part=(kind)=>{const x=manualState?.groups?.[kind];return x?x.rows.length+' حساب، '+importTime(x.at)+' — '+x.file:'كشف الأونلاين';};
- document.getElementById('manualInfo').textContent='الزبائن: '+part('customer')+'\nالمجهزين: '+part('supplier');
- const c=records.filter(r=>r.category==='customer').length,s=records.filter(r=>r.category==='supplier').length;
- document.getElementById('updated').textContent='الحسابات الحالية: '+(c+s)+' ('+c+' زبائن، '+s+' مجهزين). آخر تحديث أونلاين: '+(dataset?.updated_at||'');
+ const groups=manualState?.groups || {};
+ const online='كشف الأونلاين ('+dataset.updated_at+')';
+ const source=group=>group?'استيراد على هذا الجهاز ('+importTime(group.at)+')':online;
+ const detail=group=>group?group.rows.length+' حساب، '+importTime(group.at)+' — '+group.file:online;
+ document.getElementById('manualInfo').textContent='الزبائن: '+detail(groups.customer)+'\nالمجهزين: '+detail(groups.supplier);
+ const customers=records.filter(r=>r.category==='customer').length;
+ const suppliers=records.filter(r=>r.category==='supplier').length;
+ document.getElementById('updated').textContent='الحسابات الحالية: '+records.length+' ('+customers+' زبائن، '+suppliers+' مجهزين).';
+ document.getElementById('balanceSource').textContent=groups.customer || groups.supplier
+  ? 'مصدر المبالغ المعروضة — الزبائن: '+source(groups.customer)+' • المجهزين: '+source(groups.supplier)
+  : 'مصدر المبالغ المعروضة للزبائن والمجهزين — '+online;
  document.getElementById('jagBtn').textContent='جكوار ('+records.filter(r=>r.jaguar).length+')';
   document.getElementById('usdBtn').textContent='حسابات الدولار ('+records.filter(r=>balanceNumber(r.usd)!==0).length+')';
 }
@@ -309,8 +316,6 @@ async function fetchDataset(){
  receiptDataset=null;
  SENT_KEY='sama_allubab_debt_sent_'+dataset.version;
  POS_KEY='sama_allubab_debt_scroll_'+dataset.version;
- document.getElementById('updated').textContent='آخر تحديث: '+dataset.updated_at+' — '+dataset.count+' حساب، منها '+(dataset.jaguar_count||0)+' جكوار';
- document.getElementById('jagBtn').textContent='جكوار ('+(dataset.jaguar_count||0)+')';
 }
 async function derive(pass,p){
  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
@@ -362,7 +367,6 @@ async function reconcileReceipts(rows,authRecords){
  }
  if(removed!==3||out.length!==205)throw new Error('Unexpected number of settled accounts');
  dataset.count=out.length;
- document.getElementById('updated').textContent='آخر تحديث: 24-10-2026 — بعد 4 سندات قبض — '+out.length+' حساب، منها '+(dataset.jaguar_count||0)+' جكوار';
  return out;
 }
 async function decrypt(pass){
@@ -707,7 +711,8 @@ async function updateRemoteDebts(showMessage){
   await fetchDataset();
   if(!records.length)return true;
   if(previous.dataset && previous.dataset.version===dataset.version && JSON.stringify(previous.dataset.payload_candidates||previous.dataset.payload)===JSON.stringify(dataset.payload_candidates||dataset.payload)){
-   if(showMessage)showStatus('الديون محدثة حسب آخر كشف بتاريخ '+dataset.updated_at);
+   showImportInfo();
+   if(showMessage)showStatus('تم فحص كشف الأونلاين. '+document.getElementById('balanceSource').textContent);
    return true;
   }
   const pass=lastDecryptionPassword||localStorage.getItem(REMEMBER_KEY)||'';
@@ -715,7 +720,7 @@ async function updateRemoteDebts(showMessage){
   const fresh=await decrypt(pass);
   baseRecords=fresh;records=combineRecords();
   render();showImportInfo();
-  showStatus('✓ تمت مراجعة كشف الأونلاين، وأي استيراد يدوي بقي محفوظاً.');
+  if(showMessage)showStatus('تم تحديث كشف الأونلاين. '+document.getElementById('balanceSource').textContent);
   return true;
  }catch(e){
   ({dataset,authDataset,receiptDataset,SENT_KEY,POS_KEY}=previous);
