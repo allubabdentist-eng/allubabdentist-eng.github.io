@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="30">
+<html lang="ar" dir="rtl" data-app-version="31">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -112,14 +112,11 @@
 <button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button>
 <button id="clearSearch" class="toolbtn">مسح البحث</button></div>
   <details class="maintenance-options">
-   <summary>الإعدادات وحفظ العلامات</summary>
+   <summary>الإعدادات</summary>
    <div class="toolbar"><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button>
-<button id="sentBackup" class="toolbtn" type="button">حفظ العلامات</button>
-<button id="sentImport" class="toolbtn" type="button">استيراد علامات</button>
-<button id="restoreSent" class="toolbtn" type="button">استرجاع المرسل</button>
 <button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button>
 <button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button>
-<button id="lockBtn" class="toolbtn">قفل الصفحة</button><input id="sentImportFile" type="file" accept=".json,application/json" hidden></div>
+<button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
   </details>
  </details>
  <details id="bulkExclusions" hidden>
@@ -703,18 +700,6 @@ document.getElementById('importSuppliers').addEventListener('click',()=>document
 document.getElementById('customersExcel').addEventListener('change',function(){const file=this.files?.[0];this.value='';doImport(file,'customer');});
 document.getElementById('suppliersExcel').addEventListener('change',function(){const file=this.files?.[0];this.value='';doImport(file,'supplier');});
 
-document.getElementById('restoreSent').addEventListener('click',async()=>{
- if(!confirm('علامات النسخ القديمة ممكن تكون غير دقيقة. متأكد تريد استرجاعها وإضافتها للحالات الحالية؟'))return;
- showStatus('جاري فحص سجلات النسخ السابقة…');
- const fromLocal=restoreOldSent(true), fromDB=await restoreLegacyHtmlDatabase();
- render();
- const data=countSavedOldData(),total=data.active;
- if(fromLocal+fromDB.added>0)showStatus('رجعنا '+(fromLocal+fromDB.added)+' علامة إرسال. مجموع المؤشر حالياً '+total+'.');
- else if(total>0)showStatus('المحفوظ حالياً '+total+' علامة. ماكو علامات إضافية بالنسخ الموجودة على هذا المتصفح.');
- else if(data.marked+data.legacyMarked>0)showStatus('لقينا علامات قديمة، لكن أرقام حساباتها ما طابقت الكشف الحالي. تواصل ويانا حتى نفحصها.');
- else showStatus('ما لقينا سجل إرسال محفوظ بهالنسخة من التطبيق. إذا كنت مأشر من ملف HTML أو من Safari بدل أيقونة الشاشة، فكل واحد ممكن يحتفظ بسجل مستقل. إذا عندك ملف نسخة احتياطية اضغط «استيراد علامات».');
-});
-
 document.getElementById('unsentFilter').addEventListener('click',()=>{
  onlyUnsent=!onlyUnsent;
  const btn=document.getElementById('unsentFilter');
@@ -745,9 +730,6 @@ document.getElementById('undoReset').addEventListener('click',()=>{
   showStatus('رجعنا علامات الإرسال السابقة مثل ما كانت قبل التصحيح.');
  }catch(e){showStatus('ما كدرنا نرجّع الحالات المحفوظة.');}
 });
-document.getElementById('sentBackup').addEventListener('click',downloadSentBackup);
-document.getElementById('sentImport').addEventListener('click',()=>document.getElementById('sentImportFile').click());
-document.getElementById('sentImportFile').addEventListener('change',function(){importSentBackup(this);});
 document.getElementById('clearSearch').addEventListener('click',()=>{document.getElementById('q').value='';filterCards();document.getElementById('q').focus();});
 document.getElementById('lockBtn').addEventListener('click',()=>{localStorage.removeItem(REMEMBER_KEY);location.reload();});
 addEventListener('scroll',()=>{if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));},{passive:true});
