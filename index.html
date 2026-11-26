@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-app-version="34">
+<html lang="ar" dir="rtl" data-app-version="35">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -86,15 +86,15 @@
  <div id="manualInfo" role="status" aria-live="polite">لا يوجد كشف يدوي.</div>
 </section>
 
- <div class="payment-help">إذا بقى رصيد الحساب بالدينار والدولار ثابتاً شهراً كاملاً يظهر بالأحمر. عند استيراد كشف يتغيّر بيه أي مبلغ، يبدأ احتساب الشهر من تاريخ رصد التغيّر. رفع كشف بنفس المبالغ يحافظ على بداية المتابعة. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
+ <div class="payment-help">إذا مرّ شهر على آخر تسديد يظهر الحساب المدين بالأحمر. زيادة الرصيد أو بقاؤه نفسه يحافظان على موعد المتابعة. انخفاض الرصيد المدين بالدينار أو الدولار يُحسب تسديداً ويبدأ شهراً جديداً من تاريخ رصده بالكشف. تسجيل تسديد يدوي يعتمد التاريخ الذي تحدّده. <b>جكوار/جكور مستثناة</b> لأنها تابعة لشركة النقل. تأشير التسديد لا يغيّر مبالغ كشف الديون.</div>
  <section class="financial-overview" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0"><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">إلنا بذمة الحسابات</div><strong id="toUsIqd" style="display:block;margin-top:7px;color:#6ff0b4;font-size:18px;direction:ltr">…</strong><strong id="toUsUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">…</strong></div><div style="border:1px solid #21494b;border-radius:13px;padding:12px;background:#10282a"><div style="font-size:13px;color:#b8c6c8">علينا للآخرين</div><strong id="weOweIqd" style="display:block;margin-top:7px;color:#ffe5a3;font-size:18px;direction:ltr">…</strong><strong id="weOweUsd" style="display:block;margin-top:4px;font-size:15px;direction:ltr">…</strong></div></section><div id="balanceSource" style="font-size:13px;color:#b8c6c8;margin-bottom:12px;line-height:1.6"></div>
  <div class="statusbar">
   <span class="pill donepill" id="sentCount">تم الإرسال: 0</span>
   <span class="pill leftpill" id="leftCount">الباقي: 0</span>
-  <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 رصيد ثابت شهر: 0</span>
+  <span class="pill shownpill" id="shownCount">المعروض: 0</span><span class="pill latepill" id="lateCount">🔴 بدون تسديد شهر: 0</span>
  </div>
  <input id="q" class="search" placeholder="ابحث باسم الزبون أو الرقم..." autocomplete="off">
- <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 رصيد ثابت شهر</button><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
+ <div class="toolbar"><button id="sendStatements" class="toolbtn" type="button" style="background:#42e6e1;color:#081719;font-weight:750">إرسال الديون للجميع (بدون جكوار)</button><button type="button" id="shortcutSettings" class="toolbtn">إعداد واتساب الآيفون</button><button id="jagBtn" class="toolbtn">جكوار (79)</button><button id="usdBtn" class="toolbtn" type="button">حسابات الدولار ($)</button><button id="lateBtn" class="toolbtn" type="button">🔴 بدون تسديد شهر</button><button id="unsentFilter" class="toolbtn" type="button">غير المرسل فقط</button><button id="resetSent" class="toolbtn" type="button" style="border-color:#955555;color:#ffb7b7">تصحيح علامات الإرسال</button><button id="undoReset" class="toolbtn" type="button">تراجع عن التصحيح</button><button id="clearSearch" class="toolbtn">مسح البحث</button><button id="lockBtn" class="toolbtn">قفل الصفحة</button></div>
  <details id="bulkExclusions" hidden>
   <summary id="bulkExclusionCount"></summary>
   <ul id="bulkExclusionNames"></ul>
@@ -155,15 +155,20 @@ function paymentDates(){return readSentObject(PAYMENT_KEY)||{};}
 function paymentId(r){return stableSentId(r);}
 function lastPaid(r){const p=paymentDates()[paymentId(r)];const local=p&&dateOK(p.date)?p.date:null,server=dateOK(r.balance_reduced_on)?r.balance_reduced_on:null;return local&&server?(local>server?local:server):(local||server);}
 function overdue(r){
- return r.due && !r.jaguar && dateOK(r.balance_since) && today()>=nextMonth(r.balance_since);
+ const paid=lastPaid(r);
+ const since=paid && paid>r.balance_since?paid:r.balance_since;
+ return r.due && !r.jaguar && dateOK(since) && today()>=nextMonth(since);
 }
 function trackBalances(rows,previousRows,observedOn){
  const previous=new Map(previousRows.map(row=>[String(row.account),row]));
  return rows.map(row=>{
   const old=previous.get(String(row.account));
-  const unchanged=old && ['iqd','usd'].every(currency=>
-   Math.round(balanceNumber(old[currency])*100)===Math.round(balanceNumber(row[currency])*100));
-  const since=unchanged && dateOK(old.balance_since)?old.balance_since:observedOn;
+  const reduced=old && ['iqd','usd'].some(currency=>{
+   const before=Math.round(balanceNumber(old[currency])*100);
+   const after=Math.round(balanceNumber(row[currency])*100);
+   return before>0 && after<before;
+  });
+  const since=old && !reduced && dateOK(old.balance_since)?old.balance_since:observedOn;
   return {...row,balance_since:since};
  });
 }
@@ -656,7 +661,7 @@ function render(){
  const state=getState(),box=document.getElementById('cards');
  box.innerHTML=sortedDebtRows().map((r,i)=>{
   const late=overdue(r),last=(!r.jaguar&&r.due)?lastPaid(r):null;
-  const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 الرصيد ثابت من شهر</span>':'');
+  const tags=(r.jaguar?'<span class="flag jag">جكوار</span>':'')+(r.category==='supplier'?'<span class="flag supplier">مجهز</span>':'')+(r.due===false?'<span class="flag credit">دائن / علينا</span>':'')+(r.review?'<span class="flag review">مراجعة</span>':'')+(late?'<span class="flag lateflag">🔴 ماكو تسديد من شهر</span>':'');
   const needsTransfer=hasPayableBalance(r)&&!transferNumber&&(r.wa_phone||r.message);
   const action=needsTransfer?'<button type="button" class="wa setup-transfer">'+(r.wa_phone?'فتح واتساب':'نسخ المسج')+'</button>':r.wa_phone?'<a class="wa" href="'+waUrl(r)+'" target="_blank" rel="noopener">فتح واتساب</a>':(r.message?'<button class="wa copy" type="button" data-copy="'+esc(r.id)+'">نسخ المسج</button>':'<span class="wa disabled">لا توجد مطالبة</span>');
   const bulkChoice=isStatementCustomer(r) && /^\d{1,24}$/.test(String(r.account||''))
@@ -676,7 +681,7 @@ async function copyMessage(btn){
  btn.textContent='تم نسخ المسج';
 }
 function toggle(card){const state=getState(),id=card.dataset.id;state[id]=!state[id];if(!state[id])delete state[id];card.classList.toggle('sent',!!state[id]);card.querySelector('.done').textContent=state[id]?'تم':'تم الإرسال';saveState(state);if(onlyUnsent)filterCards();}
-function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('lateCount').textContent='🔴 رصيد ثابت شهر: '+cards.filter(c=>c.dataset.late==='1').length;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
+function updateCounts(){const state=getState(),cards=[...document.querySelectorAll('.card')],sent=cards.filter(c=>state[c.dataset.id]).length,shown=cards.filter(c=>c.style.display!=='none').length;document.getElementById('sentCount').textContent='تم الإرسال: '+sent;document.getElementById('leftCount').textContent='الباقي: '+(cards.length-sent);document.getElementById('shownCount').textContent='المعروض: '+shown;document.getElementById('lateCount').textContent='🔴 بدون تسديد شهر: '+cards.filter(c=>c.dataset.late==='1').length;document.getElementById('counter').textContent='المعروض: '+shown+' من '+cards.length;document.getElementById('noresults').style.display=shown?'none':'block';}
 function filterCards(){const q=normalizeArabic(document.getElementById('q').value),parts=q?q.split(' '):[],state=getState();document.querySelectorAll('.card').forEach(c=>{const h=normalizeArabic(c.dataset.search);c.style.display=(!onlyJaguar||c.dataset.jaguar==='1')&&(!onlyUnsent||!state[c.dataset.id])&&(!onlyLate||c.dataset.late==='1')&&(!onlyDollar||c.dataset.usd==='1')&&parts.every(p=>h.includes(p))?'':'none';});try{localStorage.setItem(QUERY_KEY,document.getElementById('q').value);}catch(e){}updateCounts();}
 function remember(){if(POS_KEY)localStorage.setItem(POS_KEY,String(scrollY||0));localStorage.setItem(QUERY_KEY,document.getElementById('q').value||'');}
 
